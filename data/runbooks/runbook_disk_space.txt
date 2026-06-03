@@ -1,0 +1,65 @@
+RUNBOOK: Disk Space Alert
+Category: Infrastructure / Storage
+Severity: P2 - High (P1 if > 95%)
+Last Updated: 2024-01-01
+
+DESCRIPTION
+Disk utilization has exceeded the warning threshold (default: 80%) or critical threshold (95%).
+Full disks can cause application crashes, log loss, and database corruption.
+
+DETECTION
+Alert triggers when: disk usage > 80% (warning) or > 95% (critical).
+Monitoring: Datadog / node_exporter / CloudWatch disk metric.
+
+IMMEDIATE STEPS
+1. Identify which filesystem is full:
+   df -h
+
+2. Find the largest directories consuming space:
+   du -sh /* 2>/dev/null | sort -rh | head -10
+   du -sh /var/log/* | sort -rh | head -10
+
+3. Check for large log files:
+   find /var/log -type f -size +500M
+
+4. Check for large temp files:
+   find /tmp -type f -size +100M
+   find /var/tmp -type f -size +100M
+
+5. Clear old log files safely (check retention policy first):
+   journalctl --vacuum-size=500M
+   find /var/log -name "*.gz" -mtime +7 -delete
+
+6. Clear package manager cache (if safe):
+   apt-get clean        # Debian/Ubuntu
+   yum clean all        # RHEL/CentOS
+
+7. Check Docker disk usage:
+   docker system df
+   docker system prune --volumes -f   # WARNING: removes stopped containers
+
+8. Verify disk usage drops:
+   df -h
+
+INVESTIGATION
+- Identify what caused the spike (new application, log verbosity increase, core dump)
+- Check if disk is growing continuously (log leak, undeleted temp files)
+- Review application for logging misconfiguration
+
+AWS-SPECIFIC STEPS
+- Extend EBS volume: AWS Console > EC2 > Volumes > Modify Volume
+- After resize, extend filesystem:
+  sudo growpart /dev/xvda 1
+  sudo resize2fs /dev/xvda1     # ext4
+  sudo xfs_growfs /             # xfs
+
+PERMANENT FIX
+- Implement log rotation with logrotate for all application logs
+- Set up disk usage alerts at 70%, 80%, 90%
+- Use centralized log aggregation (ELK / CloudWatch Logs)
+- Review and automate cleanup of temp files via cron
+
+ESCALATION
+- If disk is at 95% or above and cannot be cleared: escalate to Infrastructure team
+- If production database disk is affected: escalate to DBA immediately
+- Slack: #incident-response | PagerDuty: Infrastructure On-Call

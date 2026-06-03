@@ -1,0 +1,67 @@
+RUNBOOK: Database Connection Pool Exhaustion / Connection Failure
+Category: Database / Application
+Severity: P1 - Critical
+Last Updated: 2024-01-01
+
+DESCRIPTION
+Application cannot connect to the database. This may be due to connection pool exhaustion,
+database server overload, network partition, or database crash.
+
+DETECTION
+Alert triggers when: DB connection errors > 10 in 1 minute OR application health check fails.
+Error pattern in logs: "Too many connections", "Connection refused", "Connection pool exhausted"
+
+IMMEDIATE STEPS
+1. Verify database server is reachable:
+   ping <db-host>
+   telnet <db-host> 5432   # PostgreSQL default port
+   telnet <db-host> 3306   # MySQL default port
+
+2. Check current active connections (PostgreSQL):
+   psql -h <db-host> -U <admin-user> -c "SELECT count(*) FROM pg_stat_activity;"
+
+3. Check current active connections (MySQL):
+   mysql -h <db-host> -u root -p -e "SHOW STATUS LIKE 'Threads_connected';"
+
+4. Check for long-running or blocking queries (PostgreSQL):
+   SELECT pid, now() - pg_stat_activity.query_start AS duration, query, state
+   FROM pg_stat_activity
+   WHERE (now() - pg_stat_activity.query_start) > interval '5 minutes';
+
+5. Kill long-running blocking queries if safe (PostgreSQL):
+   SELECT pg_terminate_backend(<pid>);
+
+6. If connection pool exhausted, restart the application connection pool:
+   systemctl restart <app-service>
+
+7. Verify connections drop to normal range:
+   Check DB metrics in monitoring dashboard
+
+INVESTIGATION
+- Review application logs for connection leak patterns
+- Check if recent deployment changed DB pool configuration
+- Review slow query logs for new expensive queries
+- Check DB server disk space (full disk can cause connection refusal)
+
+POSTGRESQL TUNING (if needed)
+- max_connections parameter: increase in postgresql.conf
+- Use PgBouncer connection pooler for high-traffic applications
+
+MYSQL TUNING (if needed)
+- max_connections: SET GLOBAL max_connections = 500;
+- Use ProxySQL or MySQL Router for connection pooling
+
+PERMANENT FIX
+- Implement connection pooling (PgBouncer / ProxySQL)
+- Review and fix connection leak in application code
+- Add DB connection monitoring and alerting to dashboards
+- Set appropriate pool size limits per application
+
+ESCALATION
+- If DB server is down: escalate to DBA team immediately
+- If replication lag detected: escalate to DBA team
+- Slack: #db-incidents | PagerDuty: DBA On-Call
+
+ROLLBACK
+- If issue started after deployment: roll back app to previous version
+- Do NOT restart DB server without DBA approval in production

@@ -1,0 +1,61 @@
+RUNBOOK: High CPU Alert - Linux Server / VM
+Category: Infrastructure / Compute
+Severity: P2 - High
+Last Updated: 2024-01-01
+
+DESCRIPTION
+CPU utilization has exceeded the threshold (default: 85% for 5 minutes).
+This can cause application slowdown, request timeouts, and cascading failures.
+
+DETECTION
+Alert triggers when: CPU > 85% sustained for 5 minutes.
+Monitoring: Datadog / Prometheus / CloudWatch CPU metric.
+
+IMMEDIATE STEPS
+1. SSH into the affected server:
+   ssh <user>@<server-ip>
+
+2. Check current CPU usage and top processes:
+   top -bn1 | head -20
+   ps aux --sort=-%cpu | head -10
+
+3. Identify the highest CPU consuming process:
+   pidstat -u 1 5
+
+4. Check if CPU spike is sustained or a burst:
+   sar -u 1 10
+
+5. If a runaway process is identified, check if safe to restart:
+   systemctl status <service-name>
+
+6. Gracefully restart the service if appropriate:
+   systemctl restart <service-name>
+
+7. Verify CPU drops after restart:
+   watch -n 2 'top -bn1 | head -5'
+
+INVESTIGATION
+- Check application logs for errors correlating with the spike
+- Review recent deployments (was code deployed in last 2 hours?)
+- Check for cron jobs scheduled around the same time
+- Review load balancer metrics for traffic spike
+
+CLOUD-SPECIFIC STEPS (AWS EC2)
+- Check CloudWatch metrics for CPU steal (noisy neighbour)
+- Consider vertical scaling: stop instance, change instance type, start
+- Enable enhanced monitoring for detailed metrics
+
+PERMANENT FIX
+- Add CPU-based autoscaling policy (AWS ASG / Kubernetes HPA)
+- Profile and optimize the high-CPU application code
+- Review and stagger cron job schedules to avoid overlap
+
+ESCALATION
+- If CPU remains high after service restart: escalate to Application Team
+- If multiple servers affected: possible DDoS or traffic surge - escalate to NOC
+- Slack: #incident-response | PagerDuty: Infrastructure On-Call
+
+ROLLBACK
+- If spike followed a deployment: roll back deployment
+- Kubernetes: kubectl rollout undo deployment/<name>
+- AWS ECS: update service to previous task definition revision

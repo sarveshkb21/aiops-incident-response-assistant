@@ -1,0 +1,51 @@
+RUNBOOK: Kubernetes Pod OOMKilled (Out of Memory)
+Category: Kubernetes / Container Platform
+Severity: P2 - High
+Last Updated: 2024-01-01
+
+DESCRIPTION
+A pod has been terminated by the Kubernetes OOM (Out of Memory) killer because it exceeded its memory limit.
+
+DETECTION
+Alert triggers when: pod restarts > 3 within 10 minutes with reason OOMKilled.
+Check via: kubectl describe pod <pod-name> -n <namespace>
+Look for: "OOMKilled" in Last State section.
+
+IMMEDIATE STEPS
+1. Identify the affected pod and namespace:
+   kubectl get pods -n <namespace> | grep CrashLoopBackOff
+   kubectl describe pod <pod-name> -n <namespace>
+
+2. Check current memory usage and limits:
+   kubectl top pod <pod-name> -n <namespace>
+   kubectl get pod <pod-name> -n <namespace> -o yaml | grep -A5 resources
+
+3. Check pod logs for memory leak indicators:
+   kubectl logs <pod-name> -n <namespace> --previous
+
+4. Temporary fix - increase memory limit in deployment:
+   kubectl set resources deployment <deployment-name> -n <namespace> --limits=memory=1Gi
+
+5. Verify pod recovers:
+   kubectl get pods -n <namespace> -w
+
+INVESTIGATION
+- Review application logs for memory leak patterns
+- Check if traffic spike caused memory spike (correlate with APM)
+- Review recent deployments or config changes (git history)
+- Check JVM heap settings if Java application
+
+PERMANENT FIX
+- Update resource limits in Helm chart or deployment YAML
+- Add Vertical Pod Autoscaler (VPA) for automatic sizing
+- Implement memory profiling in dev environment
+- Add memory leak detection to CI/CD pipeline
+
+ESCALATION
+- If pod continues OOMKilling after limit increase: escalate to Application Team
+- If multiple pods affected across namespace: escalate to Platform Engineering
+- Slack: #incident-response | PagerDuty: Platform On-Call
+
+ROLLBACK
+- Revert recent deployment if memory issue started after release:
+  kubectl rollout undo deployment/<deployment-name> -n <namespace>
