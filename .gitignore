@@ -3,7 +3,7 @@
 .streamlit/secrets.toml
 
 # Generated data / vector store
-chroma_db/
+#chroma_db/
 
 # Python
 __pycache__/
