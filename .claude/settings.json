@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(mkdir -p kubernetes database infrastructure network security)",
+      "Bash(mv runbook_oom_kubernetes.txt kubernetes/)",
+      "Bash(mv runbook_database.txt database/)",
+      "Bash(mv runbook_disk_space.txt infrastructure/)",
+      "Bash(mv runbook_high_cpu.txt infrastructure/)",
+      "PowerShell(cd \"C:\\\\Users\\\\Sarvesh\\\\OneDrive\\\\Desktop\\\\Sarvesh-Projects\\\\aiops-assistant\"; .\\\\venv\\\\Scripts\\\\python -m py_compile ingest.py; if \\($?\\) { \"ingest.py compiles OK\" }; Test-Path .\\\\chroma_db; if \\(Test-Path .\\\\chroma_db\\) { \\(Get-ChildItem .\\\\chroma_db -Recurse | Measure-Object\\).Count })",
+      "PowerShell(cd \"C:\\\\Users\\\\Sarvesh\\\\OneDrive\\\\Desktop\\\\Sarvesh-Projects\\\\aiops-assistant\"; try { Remove-Item -Recurse -Force .\\\\chroma_db -ErrorAction Stop; \"Removed empty chroma_db successfully - folder was NOT locked anymore\" } catch { \"Still locked: $\\($_.Exception.Message\\)\" })"
     ]
   }
 }

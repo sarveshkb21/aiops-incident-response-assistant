@@ -82,3 +82,55 @@ def get_rag_chain():
     )
 
     return chain
+
+
+def get_agent_chain(domain: str):
+    """Build a RAG chain whose retriever is scoped to a single domain.
+
+    `domain` matches the `domain` metadata set during ingestion (the runbook
+    subfolder name, e.g. "network", "security", "kubernetes"). When `domain` is
+    "general", no metadata filter is applied and retrieval searches all runbooks.
+    """
+
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "GOOGLE_API_KEY is not set. Copy .env.example to .env and add your "
+            "Gemini API key (get one at https://aistudio.google.com/app/apikey)."
+        )
+
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model=EMBEDDING_MODEL,
+        google_api_key=api_key
+    )
+
+    vectorstore = Chroma(
+        persist_directory=CHROMA_DIR,
+        embedding_function=embeddings
+    )
+
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=api_key,
+        temperature=0.3
+    )
+
+    prompt = PromptTemplate(
+        template=PROMPT_TEMPLATE,
+        input_variables=["context", "question"]
+    )
+
+    # Scope retrieval to the requested domain; "general" searches everything.
+    search_kwargs = {"k": 3}
+    if domain and domain != "general":
+        search_kwargs["filter"] = {"domain": domain}
+
+    chain = RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type="stuff",
+        retriever=vectorstore.as_retriever(search_kwargs=search_kwargs),
+        chain_type_kwargs={"prompt": prompt},
+        return_source_documents=True
+    )
+
+    return chain

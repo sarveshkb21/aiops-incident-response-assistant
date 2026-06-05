@@ -1,0 +1,63 @@
+RUNBOOK: DNS Resolution Failure
+Category: Network / DNS
+Severity: P1 - Critical (if widespread) / P2 - High
+Last Updated: 2024-01-01
+
+DESCRIPTION
+Services cannot resolve hostnames to IP addresses. Symptoms include
+"Name or service not known", "Temporary failure in name resolution",
+connection timeouts to dependencies, and intermittent failures that look
+like outages but are actually DNS lookups failing or timing out.
+
+DETECTION
+Alert triggers when: DNS query failure rate rises, resolver latency spikes,
+or synthetic checks for known hostnames fail.
+Monitoring: Datadog / Prometheus DNS metrics, CoreDNS logs (Kubernetes),
+application logs showing resolution errors.
+
+IMMEDIATE STEPS
+1. Confirm whether resolution is broken from an affected host:
+   nslookup <hostname>
+   dig <hostname> +short
+   dig @8.8.8.8 <hostname> +short      # test a public resolver to isolate
+
+2. Check the host's configured resolvers:
+   cat /etc/resolv.conf
+   (systemd) resolvectl status
+
+3. In Kubernetes, check CoreDNS health and logs:
+   kubectl get pods -n kube-system -l k8s-app=kube-dns
+   kubectl logs -n kube-system -l k8s-app=kube-dns --tail=100
+
+4. Test resolution from inside a pod (rules out node vs cluster DNS):
+   kubectl run -it --rm dnstest --image=busybox --restart=Never -- nslookup <hostname>
+
+5. Check upstream resolver / firewall reachability on port 53 (TCP + UDP):
+   nc -vz -u <dns-server-ip> 53
+   nc -vz    <dns-server-ip> 53
+
+6. If a single resolver is down, fail over to a known-good resolver
+   temporarily, then restore the primary once healthy.
+
+INVESTIGATION
+- Recent changes to /etc/resolv.conf, DHCP, or VPC DHCP option sets
+- CoreDNS ConfigMap edits or a bad rollout in kube-system
+- Upstream DNS provider incident (check provider status page)
+- DNS cache poisoning or TTL expiry causing stale/empty answers
+- Rate limiting / NXDOMAIN floods exhausting the resolver
+
+PERMANENT FIX
+- Run redundant resolvers and configure multiple nameservers
+- Enable local DNS caching (node-local-dns in Kubernetes) to reduce load
+- Set sensible TTLs; avoid extremely low TTLs that hammer resolvers
+- Add alerting on resolver latency and failure rate, not just uptime
+
+ESCALATION
+- If resolution fails cluster-wide: declare an incident, escalate to NOC
+- If the upstream provider is down: escalate to the DNS/Networking team
+- Slack: #incident-response | PagerDuty: Network On-Call
+
+ROLLBACK
+- If failures started after a CoreDNS ConfigMap change: revert it
+  kubectl rollout undo deployment/coredns -n kube-system
+- Restore the previous /etc/resolv.conf or DHCP option set

@@ -2,6 +2,9 @@
 
 A RAG-powered chatbot that helps IT on-call engineers instantly find
 remediation steps during incidents using LangChain, ChromaDB, Gemini, and Streamlit.
+It uses a lightweight **multi-agent router**: each query is first classified into a
+domain (kubernetes, database, infrastructure, network, security) and answered by a
+specialist that retrieves only from that domain's runbooks.
 
 ---
 
@@ -22,6 +25,51 @@ remediation steps during incidents using LangChain, ChromaDB, Gemini, and Stream
 > `get_rag_chain()` (LLM). The embedding model **must** be identical in ingest and
 > query — it is defined once as `EMBEDDING_MODEL` in `rag_chain.py` and imported by
 > `ingest.py` to keep them in sync.
+
+---
+
+## How It Works (Multi-Agent Routing)
+
+```mermaid
+flowchart TD
+    Q["🧑‍💻 Engineer query"] --> R["🧭 Router<br/>(router.classify_query · Gemini)"]
+    R -->|kubernetes| K["☸️ Kubernetes Agent"]
+    R -->|database| D["🗄️ Database Agent"]
+    R -->|infrastructure| I["🖥️ Infrastructure Agent"]
+    R -->|network| N["🌐 Network Agent"]
+    R -->|security| S["🔒 Security Agent"]
+    R -->|general / fallback| G["🧭 General Agent"]
+    K & D & I & N & S & G --> C[("🗃️ ChromaDB<br/>filtered by domain")]
+    C --> A["💬 Answer + agent badge + sources"]
+```
+
+Each specialist is built by `get_agent_chain(<domain>)` and retrieves only from
+its domain's runbooks. The agents are defined as a registry in `agents.py`
+(`ROUTER` + `AGENTS`), which `app.py` drives.
+
+Each query flows through three steps:
+
+1. **Route** — `router.classify_query()` makes one Gemini call to classify the
+   query into a domain: `kubernetes`, `database`, `infrastructure`, `network`,
+   `security`, or `general`.
+2. **Retrieve (domain-scoped)** — `rag_chain.get_agent_chain(domain)` builds a
+   RetrievalQA chain whose ChromaDB retriever is filtered by the `domain`
+   metadata, so a specialist only sees its own runbooks. `general` applies no
+   filter and searches everything.
+3. **Answer + badge** — the app shows a coloured agent badge (☸️ Kubernetes,
+   🗄️ Database, 🖥️ Infrastructure, 🌐 Network, 🔒 Security, 🧭 General) above the
+   response, with the source runbooks listed underneath.
+
+**Misroute fallback:** if the routed domain matches no runbook, the app
+automatically retries unfiltered (`general`) so a wrong route never hides the
+correct runbook. Note this means a routed query can make up to **two** Gemini
+calls (route + answer), or three if the fallback triggers — pace usage on the
+free tier.
+
+The domains map 1:1 to the subfolders under `data/runbooks/`. The `domain`
+metadata is written by `ingest.py` (derived from each file's subfolder) and read
+back by the retriever filter — so adding a new domain is just a new subfolder
+plus a re-ingest (and adding it to `DOMAINS` in `router.py`).
 
 ---
 
@@ -72,22 +120,38 @@ The app will open at: http://localhost:8501
 
 ```
 aiops-assistant/
-├── app.py                         # Streamlit UI
-├── ingest.py                      # Document ingestion pipeline
-├── rag_chain.py                   # RAG Q&A chain (LangChain + Gemini)
+├── app.py                         # Streamlit UI (router -> agent -> badge)
+├── agents.py                      # Agent registry: ROUTER + 6 named specialists
+├── router.py                      # Classifies a query into a domain (Gemini)
+├── rag_chain.py                   # RAG chains: get_rag_chain / get_agent_chain
+├── ingest.py                      # Document ingestion pipeline (tags `domain`)
 ├── requirements.txt               # Python dependencies
 ├── CLAUDE.md                      # Guidance for Claude Code sessions
 ├── .env.example                   # API key template
 ├── .env                           # Your actual API key (do not commit)
 ├── .gitignore
 ├── data/
-│   └── runbooks/                  # Add your runbooks here
-│       ├── runbook_oom_kubernetes.txt
-│       ├── runbook_high_cpu.txt
-│       ├── runbook_database.txt
-│       └── runbook_disk_space.txt
+│   └── runbooks/                  # One subfolder per domain
+│       ├── kubernetes/
+│       │   └── runbook_oom_kubernetes.txt
+│       ├── database/
+│       │   └── runbook_database.txt
+│       ├── infrastructure/
+│       │   ├── runbook_disk_space.txt
+│       │   ├── runbook_high_cpu.txt
+│       │   └── runbook_service_health.txt
+│       ├── network/
+│       │   ├── runbook_dns_failure.txt
+│       │   └── runbook_high_latency.txt
+│       └── security/
+│           ├── runbook_unauthorized_access.txt
+│           └── runbook_ssl_cert_expiry.txt
 └── chroma_db/                     # Auto-created by ingest.py
 ```
+
+> The subfolder name becomes each runbook's `domain` metadata. To add a domain,
+> create a new subfolder, drop runbooks in, add the domain to `DOMAINS` in
+> `router.py`, and re-run `python ingest.py`.
 
 ---
 

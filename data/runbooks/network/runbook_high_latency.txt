@@ -1,0 +1,61 @@
+RUNBOOK: High Network Latency / Packet Loss
+Category: Network / Connectivity
+Severity: P2 - High (P1 if user-facing traffic affected)
+Last Updated: 2024-01-01
+
+DESCRIPTION
+Network round-trip times are elevated or packets are being dropped between
+hosts, services, or regions. This causes slow API responses, timeouts,
+retries, and degraded user experience even when CPU and memory look healthy.
+
+DETECTION
+Alert triggers when: p95/p99 latency between services exceeds threshold,
+packet loss > 1%, or retransmit rate climbs.
+Monitoring: Datadog NPM, CloudWatch, Prometheus blackbox exporter,
+load balancer latency metrics.
+
+IMMEDIATE STEPS
+1. Measure latency and loss to the target from an affected host:
+   ping -c 20 <target-host>
+   mtr -rwzbc 50 <target-host>        # combined traceroute + loss per hop
+
+2. Identify where loss/latency is introduced along the path:
+   traceroute <target-host>
+   (look for the hop where RTT jumps or loss begins)
+
+3. Check interface errors and saturation on the local host:
+   ip -s link show <iface>            # look at RX/TX errors, drops
+   sar -n DEV 1 5                     # interface throughput
+
+4. Check for bandwidth saturation / noisy neighbours:
+   iftop -i <iface>                   # top talkers
+   ss -s                              # socket/connection summary
+
+5. In cloud, check for instance network limits being hit:
+   (AWS) CloudWatch NetworkPacketsIn/Out, "bandwidth allowance exceeded"
+   Consider a larger instance type if consistently throttled
+
+6. If one link/AZ is bad, shift traffic away (drain LB target, fail over AZ).
+
+INVESTIGATION
+- Recent deployments increasing payload sizes or request volume
+- A single bad network hop or hardware (correlate with mtr hop)
+- Cross-AZ / cross-region calls that should be local
+- MTU mismatch / fragmentation causing retransmits
+- DDoS or traffic surge saturating the link (see security runbooks)
+
+PERMANENT FIX
+- Co-locate chatty services in the same AZ/region to cut RTT
+- Add connection pooling and sensible timeouts/retries with backoff
+- Right-size instances to avoid network throttling
+- Add CDN / caching for static or repeated responses
+
+ESCALATION
+- If loss is in the provider/backbone (a specific hop): escalate to Networking
+- If multiple services/regions affected: declare an incident, escalate to NOC
+- Slack: #incident-response | PagerDuty: Network On-Call
+
+ROLLBACK
+- If latency started after a deploy: roll back the deployment
+- Revert recent network/routing/security-group/MTU changes
+- Fail traffic back to the previously healthy AZ or region

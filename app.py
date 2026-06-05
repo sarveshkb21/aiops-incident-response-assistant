@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module=r"google\.
 warnings.filterwarnings("ignore", category=DeprecationWarning, module=r"chromadb.*")
 
 import streamlit as st
-from rag_chain import get_rag_chain
+from agents import ROUTER, get_agent
 
 # Page config
 st.set_page_config(
@@ -45,7 +45,8 @@ with st.sidebar:
         "Steps to handle high CPU alert on a Linux server?",
         "Database connection pool exhausted - what to do?",
         "How to respond to a disk space alert?",
-        "Service health check is failing - troubleshooting steps?"
+        "DNS resolution is failing intermittently - how to debug?",
+        "Suspicious login from an unknown IP - what now?",
     ]
     for q in sample_queries:
         if st.button(q, use_container_width=True):
@@ -57,10 +58,20 @@ with st.sidebar:
         st.rerun()
 
 
-# Load RAG chain (cached so it loads once)
-@st.cache_resource(show_spinner="Loading knowledge base...")
-def load_chain():
-    return get_rag_chain()
+def _badge_html(agent):
+    """Coloured pill for an agent (emoji + name)."""
+    return (
+        f'<span style="background-color:{agent.color};color:white;padding:3px 10px;'
+        f'border-radius:12px;font-size:0.85em;font-weight:600;">{agent.emoji} {agent.name}</span>'
+    )
+
+
+def render_routing_trace(domain, fell_back=False):
+    """Show the Router -> Specialist handoff above an answer."""
+    agent = get_agent(domain)
+    st.markdown(f'🧭 <b>Router</b> &nbsp;→&nbsp; {_badge_html(agent)}', unsafe_allow_html=True)
+    if fell_back:
+        st.caption("⚠️ No domain-specific runbook matched — General Agent searched all runbooks.")
 
 
 # Initialize chat history
@@ -70,6 +81,8 @@ if "messages" not in st.session_state:
 # Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
+        if message["role"] == "assistant" and message.get("domain"):
+            render_routing_trace(message["domain"], message.get("fell_back", False))
         st.markdown(message["content"])
 
 # Handle prefill from sidebar buttons
@@ -88,30 +101,50 @@ if user_input:
 
     # Generate response
     with st.chat_message("assistant"):
-        with st.spinner("Searching runbooks and knowledge base..."):
-            try:
-                chain = load_chain()
-                result = chain.invoke({"query": user_input})
-                response = result["result"]
+        try:
+            # 1. Route: the Router classifies the query and picks a specialist
+            with st.spinner("🧭 Router classifying the incident..."):
+                agent = ROUTER.route(user_input)
 
-                # Append source documents
+            # 2. The chosen specialist answers from its own runbooks
+            with st.spinner(f"{agent.emoji} {agent.name} searching {agent.domain} runbooks..."):
+                result = agent.run(user_input)
+            sources = result.get("source_documents", [])
+
+            # 3. Misroute fallback: if the specialist had no matching runbook,
+            #    hand off to the General agent (searches all runbooks).
+            fell_back = False
+            if not sources and agent.domain != "general":
+                agent = get_agent("general")
+                with st.spinner("🧭 No domain match — General Agent searching all runbooks..."):
+                    result = agent.run(user_input)
                 sources = result.get("source_documents", [])
-                if sources:
-                    source_names = list(set([
-                        os.path.basename(doc.metadata.get("source", "Unknown"))
-                        for doc in sources
-                    ]))
-                    response += f"\n\n---\n*Sources: {', '.join(source_names)}*"
+                fell_back = True
 
-                st.markdown(response)
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": response
-                })
+            response = result["result"]
 
-            except Exception as e:
-                err = str(e)
-                if "chroma" in err.lower() or "collection" in err.lower():
-                    st.error("Knowledge base not found. Please run `python ingest.py` first.")
-                else:
-                    st.error(f"Error: {err}")
+            # 4. Show the Router -> Specialist handoff (reflects any fallback)
+            render_routing_trace(agent.domain, fell_back)
+
+            # Append source documents
+            if sources:
+                source_names = sorted(set(
+                    os.path.basename(doc.metadata.get("source", "Unknown"))
+                    for doc in sources
+                ))
+                response += f"\n\n---\n*Sources: {', '.join(source_names)}*"
+
+            st.markdown(response)
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": response,
+                "domain": agent.domain,
+                "fell_back": fell_back,
+            })
+
+        except Exception as e:
+            err = str(e)
+            if "chroma" in err.lower() or "collection" in err.lower():
+                st.error("Knowledge base not found. Please run `python ingest.py` first.")
+            else:
+                st.error(f"Error: {err}")

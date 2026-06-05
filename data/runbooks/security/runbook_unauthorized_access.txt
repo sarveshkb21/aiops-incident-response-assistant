@@ -1,0 +1,64 @@
+RUNBOOK: Unauthorized Access / Suspicious Login
+Category: Security / Identity
+Severity: P1 - Critical
+Last Updated: 2024-01-01
+
+DESCRIPTION
+Indicators of unauthorized access: brute-force login attempts, successful
+logins from unusual locations or at unusual times, privilege escalation, or
+use of credentials known or suspected to be compromised. Treat as a potential
+active intrusion until proven otherwise.
+
+DETECTION
+Alert triggers when: repeated failed logins, impossible-travel sign-ins,
+login from a new geo/device for a privileged account, or IAM changes outside
+change windows.
+Monitoring: SIEM (Splunk / Sentinel), CloudTrail, auth logs, GuardDuty,
+WAF / IdP risk events.
+
+IMMEDIATE STEPS (CONTAINMENT FIRST)
+1. Do NOT tip off the actor by making noisy changes before you scope it,
+   but DO contain active damage. Prioritize containment of privileged access.
+
+2. Disable or lock the affected account(s) and revoke active sessions:
+   (IdP) suspend user, force sign-out / revoke refresh tokens
+   (AWS) attach a deny-all policy or disable access keys for the principal
+
+3. Rotate exposed credentials immediately:
+   - User passwords, API keys, access keys, service-account tokens
+   - Any secrets the account could have read
+
+4. Preserve evidence before changing things:
+   - Export relevant auth logs, CloudTrail events, and session metadata
+   - Note timestamps, source IPs, user agents, and actions taken
+
+5. Check what the account accessed or changed:
+   (AWS) CloudTrail for the principal's recent API calls
+   Review data access, new IAM users/keys, and resource changes
+
+6. Block malicious source IPs / ranges at the WAF or security group.
+
+INVESTIGATION
+- How were the credentials obtained (phishing, leak, reused password)?
+- Was MFA enabled and bypassed, or absent?
+- Lateral movement: did the actor pivot to other accounts/resources?
+- Any persistence created (new keys, users, scheduled tasks, backdoors)?
+- Scope of data exposure for breach-notification assessment
+
+ERADICATION & RECOVERY
+- Remove any attacker-created users, keys, roles, or persistence
+- Reset credentials for all potentially affected identities
+- Restore affected systems from known-good backups if tampered
+- Re-enable accounts only after they are confirmed clean and MFA-enforced
+
+PERMANENT FIX
+- Enforce MFA everywhere, especially for privileged and remote access
+- Adopt least-privilege IAM and short-lived credentials
+- Add anomaly/impossible-travel detection and auto-response
+- Run regular access reviews and disable unused accounts/keys
+
+ESCALATION
+- Engage the Security/IR team and follow the incident-response plan
+- Notify Legal/Compliance if data exposure is suspected (breach reporting)
+- Slack: #security-incident | PagerDuty: Security On-Call
+- Do not discuss details in public channels

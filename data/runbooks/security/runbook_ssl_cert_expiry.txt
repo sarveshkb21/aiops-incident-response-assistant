@@ -1,0 +1,63 @@
+RUNBOOK: Expired or Expiring TLS/SSL Certificate
+Category: Security / TLS
+Severity: P1 - Critical (if user-facing and expired)
+Last Updated: 2024-01-01
+
+DESCRIPTION
+A TLS certificate has expired or is about to expire. Clients will see
+"certificate expired" / "NET::ERR_CERT_DATE_INVALID" errors, browsers and
+API clients will refuse connections, and dependent integrations will fail.
+An expired cert on a public endpoint is a user-facing outage.
+
+DETECTION
+Alert triggers when: certificate expiry is within the warning window
+(e.g. 30/14/7 days), or a TLS handshake fails with an expiry error.
+Monitoring: cert-manager events (Kubernetes), ACM, blackbox exporter
+ssl_probe, synthetic HTTPS checks, browser/API client errors.
+
+IMMEDIATE STEPS
+1. Confirm the cert and its expiry on the live endpoint:
+   echo | openssl s_client -connect <host>:443 -servername <host> 2>/dev/null \
+     | openssl x509 -noout -dates -subject -issuer
+
+2. Identify what serves the cert (LB, ingress, web server, CDN) so you renew
+   in the right place.
+
+3. If you use an automated issuer, check why renewal did not happen:
+   (Kubernetes) kubectl describe certificate <name>
+                kubectl get certificaterequest,order,challenge -A
+   (AWS ACM) check the certificate status and DNS validation records
+
+4. Renew / reissue the certificate:
+   - cert-manager: delete the stuck Certificate/CertificateRequest to retrigger,
+     or fix the failing ACME challenge (DNS/HTTP-01)
+   - ACM: revalidate; ensure the validation CNAME exists in DNS
+   - Manual: issue a new cert from the CA and install it
+
+5. Deploy the new cert and reload the serving layer:
+   nginx -t && systemctl reload nginx
+   (or roll the ingress / update the LB listener certificate)
+
+6. Verify clients now get a valid cert (re-run step 1; check expiry moved out).
+
+INVESTIGATION
+- Why did auto-renewal fail (broken ACME challenge, DNS, rate limits)?
+- Was the cert manually managed with no renewal owner or reminder?
+- Are there other endpoints using the same cert that also need updating?
+- Did monitoring fail to warn in time (alert window too short or missing)?
+
+PERMANENT FIX
+- Automate issuance and renewal (cert-manager, ACM, certbot with cron)
+- Alert at 30 AND 14 AND 7 days before expiry, owned by a real team
+- Inventory all certificates and their owners/expiry centrally
+- Prefer short-lived auto-renewed certs over long-lived manual ones
+
+ESCALATION
+- If a public endpoint is down due to expiry: declare an incident
+- If renewal is blocked by the CA or DNS team: escalate accordingly
+- Slack: #incident-response | PagerDuty: Platform/Security On-Call
+
+ROLLBACK
+- Certificates do not "roll back" — the fix is forward (install a valid cert)
+- If a newly installed cert is wrong (mismatched chain/SAN), reinstall the
+  previous valid cert from backup while you reissue correctly
