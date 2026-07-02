@@ -144,6 +144,11 @@ The app will open at: http://localhost:8501
 > import time, and an unpinned resolve on Streamlit Cloud picks an incompatible
 > `opentelemetry-proto`, crashing with *"Descriptors cannot be created directly"*.
 
+> **Privacy note:** this pattern commits your runbooks *and* their embedded
+> contents (`chroma_db/`) to the repo. That is fine for the included samples —
+> but if you fork this with real internal runbooks, keep the repo **private**
+> or take the store back out of git.
+
 ---
 
 ## Project Structure

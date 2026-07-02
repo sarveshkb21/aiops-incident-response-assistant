@@ -21,3 +21,6 @@ venv/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local AI-assistant config (machine-specific paths)
+.claude/

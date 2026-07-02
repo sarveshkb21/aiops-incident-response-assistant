@@ -58,7 +58,7 @@ def classify_query(query: str) -> str:
     Falls back to "general" if the model returns anything unrecognized.
     """
     raw = _router_llm().invoke(ROUTER_PROMPT.format(query=query)).content
-    label = raw.strip().lower()
+    label = str(raw).strip().lower()
 
     # Exact match first, then tolerate stray words/punctuation around the label.
     if label in DOMAINS:
