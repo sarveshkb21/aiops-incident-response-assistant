@@ -8,8 +8,8 @@
 A RAG-powered chatbot that helps IT on-call engineers instantly find
 remediation steps during incidents using LangChain, ChromaDB, Gemini, and Streamlit.
 It uses a lightweight **multi-agent router**: each query is first classified into a
-domain (kubernetes, database, infrastructure, network, security) and answered by a
-specialist that retrieves only from that domain's runbooks.
+domain (kubernetes, database, infrastructure, network, security, cicd) and answered
+by a specialist that retrieves only from that domain's runbooks.
 
 ---
 
@@ -43,8 +43,9 @@ flowchart TD
     R -->|infrastructure| I["🖥️ Infrastructure Agent"]
     R -->|network| N["🌐 Network Agent"]
     R -->|security| S["🔒 Security Agent"]
+    R -->|cicd| P["🚀 CI/CD Agent"]
     R -->|general / fallback| G["🧭 General Agent"]
-    K & D & I & N & S & G --> C[("🗃️ ChromaDB<br/>filtered by domain")]
+    K & D & I & N & S & P & G --> C[("🗃️ ChromaDB<br/>filtered by domain")]
     C --> A["💬 Answer + agent badge + sources"]
 ```
 
@@ -56,14 +57,14 @@ Each query flows through three steps:
 
 1. **Route** — `router.classify_query()` makes one Gemini call to classify the
    query into a domain: `kubernetes`, `database`, `infrastructure`, `network`,
-   `security`, or `general`.
+   `security`, `cicd`, or `general`.
 2. **Retrieve (domain-scoped)** — `rag_chain.get_agent_chain(domain)` builds a
    RetrievalQA chain whose ChromaDB retriever is filtered by the `domain`
    metadata, so a specialist only sees its own runbooks. `general` applies no
    filter and searches everything.
 3. **Answer + badge** — the app shows a coloured agent badge (☸️ Kubernetes,
-   🗄️ Database, 🖥️ Infrastructure, 🌐 Network, 🔒 Security, 🧭 General) above the
-   response, with the source runbooks listed underneath.
+   🗄️ Database, 🖥️ Infrastructure, 🌐 Network, 🔒 Security, 🚀 CI/CD, 🧭 General)
+   above the response, with the source runbooks listed underneath.
 
 **Misroute fallback:** if the routed domain matches no runbook, the app
 automatically retries unfiltered (`general`) so a wrong route never hides the
@@ -156,10 +157,17 @@ The app will open at: http://localhost:8501
 ```
 aiops-assistant/
 ├── app.py                         # Streamlit UI (router -> agent -> badge)
-├── agents.py                      # Agent registry: ROUTER + 6 named specialists
+├── agents.py                      # Agent registry: ROUTER + 7 named agents
 ├── router.py                      # Classifies a query into a domain (Gemini)
 ├── rag_chain.py                   # RAG chain builder: get_agent_chain (domain-filtered)
 ├── ingest.py                      # Document ingestion pipeline (tags `domain`)
+├── eval/                          # Evaluation harness (see Evaluation Results)
+│   ├── run_eval.py                # python eval/run_eval.py
+│   ├── test_queries.py            # 20 labelled test queries
+│   ├── results.json               # per-query records from the last run
+│   ├── summary.md                 # metrics summary from the last run
+│   └── extensibility_test.md      # new-domain (CI/CD) test report
+├── docs/screenshots/              # annotated demo screenshots + capture guide
 ├── requirements.txt               # Python dependencies
 ├── LICENSE                        # MIT license
 ├── CLAUDE.md                      # Guidance for Claude Code sessions
@@ -179,15 +187,52 @@ aiops-assistant/
 │       ├── network/
 │       │   ├── runbook_dns_failure.txt
 │       │   └── runbook_high_latency.txt
-│       └── security/
-│           ├── runbook_unauthorized_access.txt
-│           └── runbook_ssl_cert_expiry.txt
+│       ├── security/
+│       │   ├── runbook_unauthorized_access.txt
+│       │   └── runbook_ssl_cert_expiry.txt
+│       └── cicd/
+│           ├── runbook_failed_deployment.txt
+│           ├── runbook_pipeline_stuck.txt
+│           └── runbook_artifact_registry.txt
 └── chroma_db/                     # Prebuilt vector store (committed for Streamlit Cloud)
 ```
 
 > The subfolder name becomes each runbook's `domain` metadata. To add a domain,
 > create a new subfolder, drop runbooks in, add the domain to `DOMAINS` in
 > `router.py`, and re-run `python ingest.py`.
+
+---
+
+## Evaluation Results
+
+The repo includes a reproducible evaluation harness (`python eval/run_eval.py`)
+that drives the **real production path** — router → specialist →
+domain-filtered retrieval → answer, including the misroute fallback — over 20
+labelled queries spanning all six specialist domains plus deliberately
+ambiguous/off-domain cases. It measures:
+
+- **Routing accuracy** — did the router pick the domain a human would?
+- **Retrieval hit rate** — was the expected runbook among the retrieved sources?
+- **Fallback rate** — how often the empty-retrieval safety net fired.
+- **Latency** — per stage (route / answer) and per domain.
+
+Interim results (run in progress — the harness paces itself across days to
+respect the Gemini free tier's 20-requests/day cap and resumes with
+`--resume`; final numbers live in [`eval/summary.md`](eval/summary.md)):
+
+| Metric | Result (9 queries so far) |
+|---|---|
+| Routing accuracy | **9/9 (100%)** across kubernetes, database, infrastructure, network |
+| Retrieval hit rate | **9/9 (100%)** — expected runbook always among sources |
+| Empty-retrieval fallbacks | 0 (expected: every domain has runbooks) |
+| Avg end-to-end latency | ~10.5s/query (free-tier API round trips) |
+
+**Extensibility test** ([`eval/extensibility_test.md`](eval/extensibility_test.md)):
+a new **CI/CD** specialist domain (3 runbooks) was added in **under 10 minutes**
+by changing only data + two registry entries (~8 lines in `router.py` and
+`agents.py`) — zero changes to routing, retrieval, or dispatch logic. Ingestion
+tagged all 3 docs correctly, and domain-filtered retrieval returns exclusively
+`cicd` chunks with the correct runbook as top source for all three probe queries.
 
 ---
 

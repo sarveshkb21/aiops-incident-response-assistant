@@ -1,0 +1,57 @@
+RUNBOOK: Artifact Registry Push/Pull Failures
+Category: CI/CD / Artifact Management
+Severity: P2 - High (blocks builds and deploys)
+Last Updated: 2026-07-02
+
+DESCRIPTION
+Builds cannot push images/packages to the artifact registry, or deploys
+cannot pull them. Symptoms: "denied: permission", "401 Unauthorized",
+"manifest unknown", "blob upload invalid", timeouts on push/pull, or
+ImagePullBackOff in Kubernetes shortly after a registry change.
+
+DETECTION
+Alert triggers when: pipeline publish steps fail across multiple repos, or
+deploy jobs report image pull errors.
+Monitoring: registry provider status (ECR/GCR/Artifactory/Docker Hub),
+pipeline publish-step failure rate, registry storage quota metrics.
+
+IMMEDIATE STEPS
+1. Classify the failure from the error message:
+   - 401/403 -> credentials or permissions
+   - 404 / manifest unknown -> tag or retention policy problem
+   - 5xx / timeout -> registry availability or network path
+2. For auth failures, check credential expiry first — most registry tokens
+   are short-lived:
+   - Re-run the registry login step (docker login / token refresh)
+   - Check the CI secret that holds the credential: rotated? expired?
+3. For "manifest unknown" on deploy: confirm the tag actually exists.
+   A retention/cleanup policy may have deleted it — check registry
+   lifecycle rules before blaming the build.
+4. For quota/storage errors: check registry storage usage; delete or expire
+   old artifacts to unblock pushes.
+5. If the registry itself is down, deploy from the last locally cached
+   known-good image if the change is urgent; otherwise wait out the incident.
+
+INVESTIGATION
+- Recent rotation of registry credentials or service accounts
+- New or modified retention/lifecycle policies deleting tags still in use
+- Registry migration or DNS/endpoint change not propagated to all pipelines
+- Rate limiting from anonymous pulls (Docker Hub) — authenticate all pulls
+
+PERMANENT FIX
+- Use short-lived, auto-refreshed credentials (OIDC/workload identity) instead
+  of long-lived tokens stored in CI secrets
+- Immutable tags for release artifacts; retention policies that never delete
+  tags referenced by a live environment
+- Mirror/cache critical base images inside your own registry
+- Alert on publish failure rate and on storage quota before it is full
+
+ESCALATION
+- Registry provider outage: track the status page, inform #releases
+- Suspected credential compromise: escalate to Security On-Call immediately
+  (see the unauthorized-access runbook)
+- Slack: #ci-cd | PagerDuty: Platform On-Call
+
+ROLLBACK
+- Revert registry endpoint/credential changes in CI configuration
+- Re-point deploys at the previous registry until the migration is fixed

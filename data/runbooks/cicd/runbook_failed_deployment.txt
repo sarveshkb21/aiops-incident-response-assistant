@@ -1,0 +1,53 @@
+RUNBOOK: Failed Production Deployment / Bad Release
+Category: CI/CD / Release Engineering
+Severity: P1 - Critical (if user-facing) / P2 - High
+Last Updated: 2026-07-02
+
+DESCRIPTION
+A production deployment failed mid-rollout or completed but shipped a bad
+release. Symptoms include elevated error rates immediately after a deploy,
+health checks failing on new instances, a rollout stuck between versions,
+or a pipeline that reports success while the service degrades.
+
+DETECTION
+Alert triggers when: error rate or latency spikes within 15 minutes of a
+deployment event, or deployment health gates fail.
+Monitoring: deploy markers on dashboards (Grafana/Datadog), pipeline status
+(GitHub Actions / Jenkins / GitLab CI), ArgoCD sync status.
+
+IMMEDIATE STEPS
+1. Identify the release that went out and when:
+   - Check the pipeline run for the last deploy to production
+   - git log --oneline -5 on the release branch
+2. Decide fast: fix forward or roll back. If user impact is ongoing and the
+   fix is not already known, ROLL BACK FIRST, investigate after.
+3. Roll back to the previous known-good release:
+   - GitOps (ArgoCD): revert the environment commit and sync
+   - Kubernetes: kubectl rollout undo deployment/<name>
+   - VM/package deploys: redeploy the previous artifact version from the registry
+4. Verify recovery: error rate returns to baseline, health checks pass,
+   synthetic probes green.
+5. Freeze further deploys to the affected environment until root cause is known
+   (lock the pipeline or protect the environment branch).
+
+INVESTIGATION
+- Diff the bad release against the previous good one (code, config, migrations)
+- Database migrations that ran during deploy — do they need a compensating step?
+- Config/secret changes bundled with the release
+- Partial rollout state: mixed old/new versions causing incompatible traffic
+
+PERMANENT FIX
+- Add automated health gates to the pipeline (block promote on error-rate spike)
+- Use progressive delivery (canary or blue/green) so bad releases hit 5% not 100%
+- Keep database migrations backward-compatible with the previous release
+- Tag and retain the last N known-good artifacts for one-command rollback
+
+ESCALATION
+- If rollback does not restore service: declare an incident immediately
+- If a database migration cannot be reversed: escalate to the DBA on-call
+- Slack: #releases | PagerDuty: Release Engineering On-Call
+
+ROLLBACK
+- The rollback IS the immediate remediation (see steps 2-3 above)
+- If the rollback itself fails, redeploy the previous artifact by version tag
+  directly from the artifact registry, bypassing the pipeline

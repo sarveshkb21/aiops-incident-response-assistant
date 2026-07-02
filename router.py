@@ -17,7 +17,7 @@ load_dotenv()
 
 # Valid domains — must match the runbook subfolders and the `domain` metadata
 # written by ingest.py. "general" is the catch-all / no-filter fallback.
-DOMAINS = ["kubernetes", "database", "infrastructure", "network", "security", "general"]
+DOMAINS = ["kubernetes", "database", "infrastructure", "network", "security", "cicd", "general"]
 
 ROUTER_PROMPT = """You are a router for an IT incident-response assistant.
 Classify the engineer's query into exactly ONE of these domains:
@@ -27,6 +27,7 @@ Classify the engineer's query into exactly ONE of these domains:
 - infrastructure: CPU, memory, disk space, servers/VMs, host resources, service health
 - network: DNS, latency, packet loss, connectivity, load balancers, firewalls
 - security: unauthorized access, breaches, suspicious logins, TLS/cert issues, vulnerabilities
+- cicd: CI/CD pipelines, build failures, release/deploy pipelines, GitHub Actions/Jenkins, artifact registries
 - general: anything that does not clearly fit one of the categories above
 
 Respond with ONLY the domain label in lowercase. No punctuation, no explanation.

@@ -1,0 +1,53 @@
+RUNBOOK: CI Pipeline Stuck, Queued, or Hanging
+Category: CI/CD / Build Infrastructure
+Severity: P3 - Medium (P2 if blocking an urgent release)
+Last Updated: 2026-07-02
+
+DESCRIPTION
+CI pipelines are not starting (stuck in "queued") or start but hang until
+timeout. Builds that normally take minutes sit for hours. This blocks merges
+and releases; if a hotfix is waiting behind it, treat with release urgency.
+
+DETECTION
+Alert triggers when: pipeline queue time p95 exceeds threshold, or a job
+runs past its historical duration by 3x.
+Monitoring: CI provider status page, runner/agent pool utilisation,
+webhook delivery logs on the repository.
+
+IMMEDIATE STEPS
+1. Check the CI provider status page first (GitHub Actions / GitLab / Jenkins
+   controller) — a provider incident makes local debugging pointless.
+2. Check runner/agent capacity:
+   - GitHub Actions: Settings -> Actions -> Runners (self-hosted online?)
+   - Jenkins: Manage Jenkins -> Nodes (agents offline or executors saturated?)
+3. Inspect the oldest queued job for what it is waiting on: a specific runner
+   label, a concurrency group, or an environment approval gate.
+4. If a single wedged job is blocking a concurrency group: cancel it and
+   let the queue drain.
+5. Restart offline self-hosted runners:
+   - systemctl restart actions.runner.* (or the agent service)
+   - Check runner host disk space — full disks silently kill runners.
+6. If webhooks stopped delivering (no jobs triggering at all): redeliver a
+   recent webhook from the repo settings and check endpoint reachability.
+
+INVESTIGATION
+- Runner host resource exhaustion (disk, memory, docker images piling up)
+- A recently merged workflow change (bad matrix, wrong runner label, infinite loop)
+- Concurrency/lock groups introduced in workflow files
+- Provider-side incident or rate limiting (API quota exhausted by the org)
+
+PERMANENT FIX
+- Autoscale the runner pool; alert on queue depth, not just failures
+- Scheduled cleanup on runner hosts (docker system prune, workspace purge)
+- Set explicit job timeouts so hung jobs release runners quickly
+- Pin workflow runner labels to pools that actually exist
+
+ESCALATION
+- Provider incident: subscribe to the status page, inform #engineering
+- Urgent release blocked: use the documented manual deploy path (see the
+  failed-deployment runbook) with release-manager approval
+- Slack: #ci-cd | PagerDuty: Platform On-Call
+
+ROLLBACK
+- Revert the most recent change to workflow/pipeline definition files if the
+  hang started right after it merged

@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "runs": [
+      "2026-07-02 07:47:52"
+    ],
+    "llm_model": "gemini-2.5-flash",
+    "n_queries_completed": 2,
+    "n_queries_planned": 20,
+    "delay_between_queries_s": 15.0
+  },
+  "summary": {
+    "n_queries_completed": 2,
+    "n_queries_planned": 20,
+    "complete": false,
+    "routing_accuracy_pct": 100.0,
+    "retrieval_hit_pct": 100.0,
+    "fallback_count": 0,
+    "fallback_rate_pct": 0.0,
+    "avg_total_latency_s": 11.37,
+    "per_domain": {
+      "kubernetes": {
+        "n": 2,
+        "routing_accuracy_pct": 100.0,
+        "retrieval_hit_pct": 100.0,
+        "avg_route_latency_s": 2.24,
+        "avg_answer_latency_s": 9.12,
+        "avg_total_latency_s": 11.37
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "k8s-01",
+      "query": "Pods keep getting OOMKilled and restarting in production - how do I fix this?",
+      "expected_domain": "kubernetes",
+      "routed_domain": "kubernetes",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "kubernetes",
+      "sources": [
+        "runbook_oom_kubernetes.txt"
+      ],
+      "route_latency_s": 3.05,
+      "answer_latency_s": 8.91,
+      "total_latency_s": 11.97,
+      "answer_preview": "It sounds like you're dealing with a critical issue where pods are repeatedly getting OOMKilled in production. This indicates that your applications are exceeding their allocated memory limits, leading to instability.\n\nHere's a step-by-step guide to address this based on the Kubernetes Pod OOMKilled"
+    },
+    {
+      "id": "k8s-02",
+      "query": "How do I find which container in a pod exceeded its memory limit?",
+      "expected_domain": "kubernetes",
+      "routed_domain": "kubernetes",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "kubernetes",
+      "sources": [
+        "runbook_oom_kubernetes.txt"
+      ],
+      "route_latency_s": 1.43,
+      "answer_latency_s": 9.33,
+      "total_latency_s": 10.76,
+      "answer_preview": "To find which specific container within a pod exceeded its memory limit and was OOMKilled, you should use `kubectl describe pod`.\n\nHere are the steps to identify the container and address the issue:\n\n### Identify the OOMKilled Container and Initial Analysis\n\n1.  **Identify the OOMKilled Container:**"
+    }
+  ]
+}

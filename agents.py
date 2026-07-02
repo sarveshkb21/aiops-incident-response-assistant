@@ -4,8 +4,8 @@ agents.py - Multi-Agent Registry (pure LangChain + Gemini, no CrewAI)
 Defines the incident-response "team":
 
   * ROUTER         - classifies an incoming query into a domain (router.py).
-  * 5 specialists  - Kubernetes, Database, Infrastructure, Network, Security.
-                     Each answers ONLY from its own runbooks via
+  * 6 specialists  - Kubernetes, Database, Infrastructure, Network, Security,
+                     CI/CD. Each answers ONLY from its own runbooks via
                      get_agent_chain(<domain>) (rag_chain.py).
   * General agent  - fallback that searches all runbooks (no domain filter).
 
@@ -77,6 +77,12 @@ AGENTS = {
         role="Security incident responder",
         goal="Contain and resolve access, TLS, and intrusion incidents from the security runbooks.",
         emoji="🔒", color="#C62828",
+    ),
+    "cicd": Agent(
+        name="CI/CD Agent", domain="cicd",
+        role="CI/CD & release-pipeline specialist",
+        goal="Resolve pipeline, build, and release incidents from the cicd runbooks.",
+        emoji="🚀", color="#00838F",
     ),
     "general": Agent(
         name="General Agent", domain="general",

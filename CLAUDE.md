@@ -17,8 +17,8 @@ questions from local runbooks. Stack: **Streamlit** UI → **LangChain 1.x** →
   app and after adding/changing runbooks.
 - `router.py` — `classify_query(query) -> str`: one Gemini call that classifies a
   query into a domain (`kubernetes`, `database`, `infrastructure`, `network`,
-  `security`, `general`). Owns the `DOMAINS` list. Robust parsing falls back to
-  `general`.
+  `security`, `cicd`, `general`). Owns the `DOMAINS` list. Robust parsing falls
+  back to `general`.
 - `rag_chain.py` — builds the RetrievalQA chain (Chroma retriever + Gemini LLM).
   Owns shared constants `CHROMA_DIR`, `EMBEDDING_MODEL`, and `LLM_MODEL` (the
   chat model, imported by `router.py`). The builder `get_agent_chain(domain)`
@@ -26,7 +26,7 @@ questions from local runbooks. Stack: **Streamlit** UI → **LangChain 1.x** →
   everything).
 - `agents.py` — multi-agent registry (pure LangChain, no CrewAI): an `Agent`
   dataclass (name/domain/role/goal/emoji/colour + `.run()`), the `AGENTS` dict of
-  5 specialists + `general`, and a `ROUTER` that wraps `classify_query`. Chains are
+  6 specialists + `general`, and a `ROUTER` that wraps `classify_query`. Chains are
   cached per domain via `lru_cache`. This is the layer `app.py` drives.
 - `app.py` — Streamlit chat UI. Per query: `ROUTER.route()` → `agent.run()` →
   Router→Specialist routing trace above the answer. Misroute fallback: if a
@@ -44,6 +44,8 @@ answer), or 3 if the fallback fires — relevant on the free tier.
 pip install -r requirements.txt
 python ingest.py            # build the vector store (run first)
 streamlit run app.py        # launch UI at http://localhost:8501
+python eval/run_eval.py     # routing/retrieval eval (~20 queries, ~10 min,
+                            # paced for the Gemini free tier)
 ```
 
 ## Critical project rules (learned the hard way)
