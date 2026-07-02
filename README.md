@@ -1,5 +1,10 @@
 # AIOps Incident Response Assistant
 
+> 🏆 **Capstone submission** for the Google × Kaggle
+> [AI Agents: Intensive Vibe Coding Capstone Project](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project/)
+> (5-Day AI Agents Intensive, June 2026) — an agent team that solves a
+> real-world problem: getting on-call engineers from alert to remediation, fast.
+
 A RAG-powered chatbot that helps IT on-call engineers instantly find
 remediation steps during incidents using LangChain, ChromaDB, Gemini, and Streamlit.
 It uses a lightweight **multi-agent router**: each query is first classified into a
@@ -256,6 +261,13 @@ Released under the [MIT License](LICENSE) — free to use, modify, and distribut
 
 ---
 
-## Capstone Project - Build Fast with AI
-Author: Sarvesh Bedsur
-Course: Gen AI Launch Pad 2026
+## Capstone Project
+
+**Author:** Sarvesh Bedsur
+
+Submitted to the [AI Agents: Intensive Vibe Coding Capstone Project](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project/),
+the capstone of the **Google × Kaggle 5-Day AI Agents Intensive — Vibe Coding**
+course (June 2026). In the spirit of the course, the project was vibe-coded
+with an AI coding agent (Claude Code): the multi-agent architecture, ingestion
+pipeline, and deployment fixes were all built through iterative AI pair-work,
+with `CLAUDE.md` serving as the agent's persistent project memory.
