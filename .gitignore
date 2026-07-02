@@ -3,7 +3,9 @@
 .streamlit/secrets.toml
 
 # Generated data / vector store
-chroma_db/
+# NOTE: chroma_db/ is intentionally NOT ignored — it is committed so the
+# Streamlit Cloud deploy has a prebuilt knowledge base. Re-run `python ingest.py`
+# and commit the changes whenever runbooks change.
 
 # Python
 __pycache__/

@@ -19,12 +19,11 @@ questions from local runbooks. Stack: **Streamlit** UI → **LangChain 1.x** →
   query into a domain (`kubernetes`, `database`, `infrastructure`, `network`,
   `security`, `general`). Owns the `DOMAINS` list. Robust parsing falls back to
   `general`.
-- `rag_chain.py` — builds RetrievalQA chains (Chroma retriever + Gemini LLM). Owns
-  shared constants `CHROMA_DIR`, `EMBEDDING_MODEL`, and `LLM_MODEL` (the chat
-  model, imported by `router.py`). Two builders:
-  `get_rag_chain()` (unfiltered, kept for compatibility) and
-  `get_agent_chain(domain)` (filters the retriever by `domain` metadata; `general`
-  = no filter).
+- `rag_chain.py` — builds the RetrievalQA chain (Chroma retriever + Gemini LLM).
+  Owns shared constants `CHROMA_DIR`, `EMBEDDING_MODEL`, and `LLM_MODEL` (the
+  chat model, imported by `router.py`). The builder `get_agent_chain(domain)`
+  filters the retriever by `domain` metadata (`general` = no filter / searches
+  everything).
 - `agents.py` — multi-agent registry (pure LangChain, no CrewAI): an `Agent`
   dataclass (name/domain/role/goal/emoji/colour + `.run()`), the `AGENTS` dict of
   5 specialists + `general`, and a `ROUTER` that wraps `classify_query`. Chains are
@@ -79,6 +78,10 @@ streamlit run app.py        # launch UI at http://localhost:8501
 
 - Secrets live in `.env` (`GOOGLE_API_KEY`), never committed. Both entry points
   guard for a missing key with a clear message.
+- `chroma_db/` is deliberately **committed** (not gitignored) so the Streamlit
+  Cloud deploy ships a prebuilt knowledge base. After re-running `python
+  ingest.py`, commit the updated store. `requirements.txt` pins `protobuf` and
+  `opentelemetry-*` for the same deploy — do not unpin them.
 - Runbooks are plain `.txt`/`.pdf` under `data/runbooks/<domain>/`. The subfolder
   name becomes the doc's `domain` metadata, which `get_agent_chain` filters on and
   `router.py` routes to. Adding a runbook to an *existing* domain needs no code

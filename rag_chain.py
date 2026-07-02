@@ -96,11 +96,3 @@ def get_agent_chain(domain: str):
     )
 
     return chain
-
-
-def get_rag_chain():
-    """Build the unfiltered RAG chain (searches all runbooks).
-
-    Kept for compatibility — identical to get_agent_chain("general").
-    """
-    return get_agent_chain("general")

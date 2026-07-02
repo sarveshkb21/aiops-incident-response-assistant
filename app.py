@@ -135,8 +135,10 @@ if user_input:
 
             # Append source documents
             if sources:
+                # Normalise separators so a store built on Windows (\) still shows
+                # clean filenames when served on Linux (Streamlit Cloud).
                 source_names = sorted(set(
-                    os.path.basename(doc.metadata.get("source", "Unknown"))
+                    doc.metadata.get("source", "Unknown").replace("\\", "/").rsplit("/", 1)[-1]
                     for doc in sources
                 ))
                 response += f"\n\n---\n*Sources: {', '.join(source_names)}*"
@@ -151,7 +153,10 @@ if user_input:
 
         except Exception as e:
             err = str(e)
-            if "chroma" in err.lower() or "collection" in err.lower():
+            el = err.lower()
+            if "chroma" in el or "collection" in el:
                 st.error("Knowledge base not found. Please run `python ingest.py` first.")
+            elif "429" in err or "resource_exhausted" in el or "quota" in el:
+                st.warning("⏳ Gemini rate limit reached (free tier). Wait a minute and try again.")
             else:
                 st.error(f"Error: {err}")

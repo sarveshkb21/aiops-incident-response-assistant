@@ -18,7 +18,14 @@
       "PowerShell($r = Invoke-WebRequest -Uri \"https://www.kaggle.com/competitions/vibecoding-agents-capstone-project\" -UseBasicParsing -Headers @{ \"User-Agent\" = \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\)\" }; $r.Content)",
       "PowerShell(Test-Path \"$env:USERPROFILE\\\\.kaggle\\\\kaggle.json\"; .\\\\venv\\\\Scripts\\\\python.exe -c \"import kaggle\" 2>$null; pip list 2>$null | Select-String -Pattern \"kaggle\")",
       "WebFetch(domain:www.edtechinnovationhub.com)",
-      "PowerShell(git add app.py rag_chain.py router.py README.md CLAUDE.md .claude/settings.json)"
+      "PowerShell(git add app.py rag_chain.py router.py README.md CLAUDE.md .claude/settings.json)",
+      "PowerShell(git push origin main)",
+      "PowerShell(git fetch origin)",
+      "PowerShell(\"`n=== requirements.txt ===\")",
+      "PowerShell(gh --version)",
+      "PowerShell(gh auth status)",
+      "PowerShell(git checkout origin/main -- requirements.txt .gitignore chroma_db)",
+      "PowerShell(git add -A)"
     ]
   }
 }

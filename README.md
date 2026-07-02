@@ -99,8 +99,9 @@ pip install -r requirements.txt
 - Get your Gemini API key from: https://aistudio.google.com/app/apikey
 
 ### Step 5: Add your runbooks
-- Place your `.txt` or `.pdf` runbook files in `data/runbooks/`
-- Sample runbooks are already included to get you started
+- Place your `.txt` or `.pdf` runbook files under `data/runbooks/<domain>/`
+  (one subfolder per domain — the subfolder name becomes the routing domain)
+- Sample runbooks across all domains are already included to get you started
 
 ### Step 6: Ingest documents into vector store
 ```
@@ -116,6 +117,30 @@ The app will open at: http://localhost:8501
 
 ---
 
+## Deploying to Streamlit Cloud
+
+1. Push this project to a GitHub repo (with `app.py` at the repo root).
+2. On [share.streamlit.io](https://share.streamlit.io), create an app pointing at
+   `app.py`.
+3. Add your key under **Settings → Secrets** (Streamlit exposes secrets as
+   environment variables, so `os.getenv("GOOGLE_API_KEY")` works):
+   ```toml
+   GOOGLE_API_KEY = "your_key_here"
+   ```
+4. **Ship the vector store.** This repo deliberately **commits** the prebuilt
+   `chroma_db/` so a fresh deploy has a knowledge base from the first request.
+   If you change the runbooks, re-run `python ingest.py` locally and commit the
+   updated `chroma_db/`. (Alternative: run ingestion on the server at startup —
+   but that needs the API key at runtime and spends embedding quota on every
+   cold start.)
+
+> **Note:** `requirements.txt` pins `protobuf` and the `opentelemetry-*` packages.
+> Do not remove these — ChromaDB imports opentelemetry (which uses protobuf) at
+> import time, and an unpinned resolve on Streamlit Cloud picks an incompatible
+> `opentelemetry-proto`, crashing with *"Descriptors cannot be created directly"*.
+
+---
+
 ## Project Structure
 
 ```
@@ -123,7 +148,7 @@ aiops-assistant/
 ├── app.py                         # Streamlit UI (router -> agent -> badge)
 ├── agents.py                      # Agent registry: ROUTER + 6 named specialists
 ├── router.py                      # Classifies a query into a domain (Gemini)
-├── rag_chain.py                   # RAG chains: get_rag_chain / get_agent_chain
+├── rag_chain.py                   # RAG chain builder: get_agent_chain (domain-filtered)
 ├── ingest.py                      # Document ingestion pipeline (tags `domain`)
 ├── requirements.txt               # Python dependencies
 ├── LICENSE                        # MIT license
@@ -147,7 +172,7 @@ aiops-assistant/
 │       └── security/
 │           ├── runbook_unauthorized_access.txt
 │           └── runbook_ssl_cert_expiry.txt
-└── chroma_db/                     # Auto-created by ingest.py
+└── chroma_db/                     # Prebuilt vector store (committed for Streamlit Cloud)
 ```
 
 > The subfolder name becomes each runbook's `domain` metadata. To add a domain,
@@ -185,7 +210,9 @@ python ingest.py
 ```
 
 `ingest.py` automatically deletes any existing `chroma_db/` before rebuilding,
-so re-running it never duplicates documents. If the delete fails with an
+so re-running it never duplicates documents. Because `chroma_db/` is committed
+(so Streamlit Cloud deploys ship a prebuilt knowledge base), commit the rebuilt
+store afterwards. If the delete fails with an
 "access denied" error, something is holding the folder open — stop the
 Streamlit app (Ctrl+C), pause OneDrive sync if it is syncing the folder, and
 re-run.

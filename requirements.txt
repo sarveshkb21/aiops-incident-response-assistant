@@ -9,3 +9,17 @@ langchain-chroma==1.1.0
 chromadb==1.5.9
 pypdf==6.12.2
 python-dotenv==1.2.2
+
+# Transitive deps pinned to a mutually-compatible set. ChromaDB imports
+# opentelemetry (which uses protobuf) at import time; if the resolver picks an
+# older opentelemetry-proto, its pre-generated _pb2 files break the protobuf
+# runtime with "Descriptors cannot be created directly" (seen on Streamlit Cloud).
+# Pinning these reproduces the known-good local environment.
+protobuf==6.33.6
+grpcio==1.81.0
+opentelemetry-api==1.42.1
+opentelemetry-sdk==1.42.1
+opentelemetry-proto==1.42.1
+opentelemetry-exporter-otlp-proto-common==1.42.1
+opentelemetry-exporter-otlp-proto-grpc==1.42.1
+opentelemetry-semantic-conventions==0.63b1
