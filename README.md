@@ -17,14 +17,14 @@ specialist that retrieves only from that domain's runbooks.
 | Framework       | LangChain 1.x               |
 | Vector Store    | ChromaDB (local)            |
 | UI              | Streamlit                   |
-| Language        | Python 3.10+                |
+| Language        | Python 3.12+                |
 
 > **Note on model names:** Google periodically retires Gemini models. If you hit a
 > `404 NOT_FOUND` for a model, list the currently available ones and update
-> `EMBEDDING_MODEL` in `rag_chain.py` (embeddings) or the `model=` in
-> `get_rag_chain()` (LLM). The embedding model **must** be identical in ingest and
-> query — it is defined once as `EMBEDDING_MODEL` in `rag_chain.py` and imported by
-> `ingest.py` to keep them in sync.
+> `EMBEDDING_MODEL` (embeddings) or `LLM_MODEL` (chat) in `rag_chain.py` — each is
+> defined once there and imported everywhere else. The embedding model **must** be
+> identical in ingest and query; changing it requires deleting `chroma_db/` and
+> re-running `python ingest.py`.
 
 ---
 
@@ -177,25 +177,18 @@ aiops-assistant/
 ## Updating the Vector Store (ChromaDB)
 
 The vector store in `chroma_db/` is built by `ingest.py` from the files in
-`data/runbooks/`. Whenever you **add, edit, or remove** a runbook, you must
-rebuild it so the app sees the change.
+`data/runbooks/`. Whenever you **add, edit, or remove** a runbook, rebuild it
+so the app sees the change:
 
-> **Important:** Running `python ingest.py` *adds* documents to the existing
-> collection — it does not replace them. Re-running it without clearing first
-> will **duplicate** every runbook already in the store. Always delete
-> `chroma_db/` before a rebuild.
-
-### Rebuild the database (Windows / PowerShell)
 ```powershell
-Remove-Item -Recurse -Force .\chroma_db
 python ingest.py
 ```
 
-### Rebuild the database (macOS / Linux)
-```bash
-rm -rf ./chroma_db
-python ingest.py
-```
+`ingest.py` automatically deletes any existing `chroma_db/` before rebuilding,
+so re-running it never duplicates documents. If the delete fails with an
+"access denied" error, something is holding the folder open — stop the
+Streamlit app (Ctrl+C), pause OneDrive sync if it is syncing the folder, and
+re-run.
 
 A successful rebuild prints `Loaded N document(s)` and `SUCCESS: N chunks
 stored in ChromaDB`. Confirm `N` matches the number of runbooks you expect.
@@ -206,8 +199,9 @@ stored in ChromaDB`. Confirm `N` matches the number of runbooks you expect.
   incompatible — a stale `chroma_db/` will cause wrong answers or a dimension error)
 - The app reports `Knowledge base not found`
 
-After rebuilding, **restart Streamlit** (Ctrl+C, then `streamlit run app.py`) so
-it reloads the cached chain.
+After rebuilding, **fully restart Streamlit** (Ctrl+C, then `streamlit run app.py`).
+The domain chains are cached in-process, and the app's ⋮ menu → Clear cache does
+**not** rebuild them — only a restart does.
 
 ---
 
@@ -219,7 +213,7 @@ it reloads the cached chain.
 | `404 NOT_FOUND ... is not found for API version` | The Gemini model name was retired | Update the model name in `rag_chain.py` (see the model note above) |
 | `429 RESOURCE_EXHAUSTED ... limit: 0` | Model is paid-tier only (e.g. `gemini-2.5-pro`) | Switch to a free-tier model like `gemini-2.5-flash`, or enable billing |
 | `429 RESOURCE_EXHAUSTED ... retry in Ns` | Free-tier rate/daily limit hit | Wait for the retry delay; limits reset over time |
-| Model change in `rag_chain.py` has no effect in the running app | Streamlit cached the old chain | Restart the app (Ctrl+C, re-run) or use ⋮ menu → Clear cache |
+| Model change in `rag_chain.py` has no effect in the running app | The chains are cached in-process (`lru_cache`) | Fully restart the app (Ctrl+C, re-run). The ⋮ menu → Clear cache does **not** rebuild them |
 | `ModuleNotFoundError: No module named 'langchain...'` | Dependencies out of date | Re-run `pip install -r requirements.txt` |
 | Answers seem unrelated to your runbooks, or a dimension error on query | Vector store was built with a different embedding model | Delete the `chroma_db/` folder and re-run `python ingest.py` |
 | `Knowledge base not found` in the app | `ingest.py` was never run | Run `python ingest.py` before launching the app |

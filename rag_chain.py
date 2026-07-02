@@ -19,12 +19,16 @@ CHROMA_DIR = "./chroma_db"
 # or retrieval will fail with a dimension mismatch. ingest.py imports this.
 EMBEDDING_MODEL = "models/gemini-embedding-2"
 
+# Chat model for routing (router.py imports this) and answering. Gemini model
+# names get retired periodically — update it here and it applies everywhere.
+LLM_MODEL = "gemini-2.5-flash"
+
 PROMPT_TEMPLATE = """
 You are an expert AIOps assistant helping IT on-call engineers resolve incidents quickly.
 Use the runbook and knowledge base context below to give clear, step-by-step guidance.
 
 If the context does not contain specific information about the issue, say:
-"I don't have a specific runbook for this, but here is general guidance:" 
+"I don't have a specific runbook for this, but here is general guidance:"
 and then provide helpful advice based on IT best practices.
 
 Always:
@@ -40,48 +44,6 @@ Engineer Query:
 
 Your Response:
 """
-
-
-def get_rag_chain():
-    """Build and return the RAG chain."""
-
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "GOOGLE_API_KEY is not set. Copy .env.example to .env and add your "
-            "Gemini API key (get one at https://aistudio.google.com/app/apikey)."
-        )
-
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model=EMBEDDING_MODEL,
-        google_api_key=api_key
-    )
-
-    vectorstore = Chroma(
-        persist_directory=CHROMA_DIR,
-        embedding_function=embeddings
-    )
-
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=api_key,
-        temperature=0.3
-    )
-
-    prompt = PromptTemplate(
-        template=PROMPT_TEMPLATE,
-        input_variables=["context", "question"]
-    )
-
-    chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
-        chain_type_kwargs={"prompt": prompt},
-        return_source_documents=True
-    )
-
-    return chain
 
 
 def get_agent_chain(domain: str):
@@ -110,7 +72,7 @@ def get_agent_chain(domain: str):
     )
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model=LLM_MODEL,
         google_api_key=api_key,
         temperature=0.3
     )
@@ -134,3 +96,11 @@ def get_agent_chain(domain: str):
     )
 
     return chain
+
+
+def get_rag_chain():
+    """Build the unfiltered RAG chain (searches all runbooks).
+
+    Kept for compatibility — identical to get_agent_chain("general").
+    """
+    return get_agent_chain("general")

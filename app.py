@@ -15,6 +15,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module=r"chromadb
 
 import streamlit as st
 from agents import ROUTER, get_agent
+from rag_chain import CHROMA_DIR
 
 # Page config
 st.set_page_config(
@@ -22,6 +23,12 @@ st.set_page_config(
     page_icon="🚨",
     layout="wide"
 )
+
+# Fail fast if the vector store has never been built — otherwise Chroma silently
+# creates an empty store and every answer comes back with no sources.
+if not os.path.isdir(CHROMA_DIR):
+    st.error("Knowledge base not found. Run `python ingest.py` first, then restart the app.")
+    st.stop()
 
 # Header
 st.title("🚨 AIOps Incident Response Assistant")
@@ -49,11 +56,11 @@ with st.sidebar:
         "Suspicious login from an unknown IP - what now?",
     ]
     for q in sample_queries:
-        if st.button(q, use_container_width=True):
+        if st.button(q, width="stretch"):
             st.session_state["prefill"] = q
 
     st.divider()
-    if st.button("🗑️ Clear Chat History", use_container_width=True):
+    if st.button("🗑️ Clear Chat History", width="stretch"):
         st.session_state.messages = []
         st.rerun()
 

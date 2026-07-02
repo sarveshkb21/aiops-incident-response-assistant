@@ -6,8 +6,12 @@ rag_chain.py). The domains match the subfolders under data/runbooks/.
 """
 
 import os
+from functools import lru_cache
+
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
+
+from rag_chain import LLM_MODEL
 
 load_dotenv()
 
@@ -31,11 +35,9 @@ Query: {query}
 Domain:"""
 
 
-def classify_query(query: str) -> str:
-    """Classify `query` into one of DOMAINS and return the label as a string.
-
-    Falls back to "general" if the model returns anything unrecognized.
-    """
+@lru_cache(maxsize=1)
+def _router_llm() -> ChatGoogleGenerativeAI:
+    """Build the classification LLM once per process."""
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
         raise ValueError(
@@ -43,13 +45,19 @@ def classify_query(query: str) -> str:
             "Gemini API key (get one at https://aistudio.google.com/app/apikey)."
         )
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+    return ChatGoogleGenerativeAI(
+        model=LLM_MODEL,
         google_api_key=api_key,
         temperature=0  # deterministic classification
     )
 
-    raw = llm.invoke(ROUTER_PROMPT.format(query=query)).content
+
+def classify_query(query: str) -> str:
+    """Classify `query` into one of DOMAINS and return the label as a string.
+
+    Falls back to "general" if the model returns anything unrecognized.
+    """
+    raw = _router_llm().invoke(ROUTER_PROMPT.format(query=query)).content
     label = raw.strip().lower()
 
     # Exact match first, then tolerate stray words/punctuation around the label.

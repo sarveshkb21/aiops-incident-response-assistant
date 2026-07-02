@@ -20,7 +20,8 @@ questions from local runbooks. Stack: **Streamlit** UI → **LangChain 1.x** →
   `security`, `general`). Owns the `DOMAINS` list. Robust parsing falls back to
   `general`.
 - `rag_chain.py` — builds RetrievalQA chains (Chroma retriever + Gemini LLM). Owns
-  shared constants `CHROMA_DIR` and `EMBEDDING_MODEL`. Two builders:
+  shared constants `CHROMA_DIR`, `EMBEDDING_MODEL`, and `LLM_MODEL` (the chat
+  model, imported by `router.py`). Two builders:
   `get_rag_chain()` (unfiltered, kept for compatibility) and
   `get_agent_chain(domain)` (filters the retriever by `domain` metadata; `general`
   = no filter).
@@ -82,8 +83,9 @@ streamlit run app.py        # launch UI at http://localhost:8501
   name becomes the doc's `domain` metadata, which `get_agent_chain` filters on and
   `router.py` routes to. Adding a runbook to an *existing* domain needs no code
   changes (just re-ingest). Adding a *new* domain also requires adding it to
-  `DOMAINS` in `router.py` (and ideally the router prompt + `DOMAIN_STYLES` badge
-  map in `app.py`).
+  `DOMAINS` and the router prompt in `router.py`, plus an `Agent` entry in
+  `AGENTS` in `agents.py` (otherwise `get_agent` falls back to `general` and the
+  domain filter never applies).
 - The router/specialist domains, the `data/runbooks/` subfolders, and the `domain`
   metadata must all stay in sync, or routing silently misses (the misroute
   fallback in `app.py` then searches everything as a safety net).
