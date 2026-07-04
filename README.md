@@ -220,12 +220,12 @@ Interim results (run in progress — the harness paces itself across days to
 respect the Gemini free tier's 20-requests/day cap and resumes with
 `--resume`; final numbers live in [`eval/summary.md`](eval/summary.md)):
 
-| Metric | Result (9 queries so far) |
+| Metric | Result (11 of 20 queries so far) |
 |---|---|
-| Routing accuracy | **9/9 (100%)** across kubernetes, database, infrastructure, network |
-| Retrieval hit rate | **9/9 (100%)** — expected runbook always among sources |
+| Routing accuracy | **11/11 (100%)** — kubernetes, database, infrastructure, network fully covered |
+| Retrieval hit rate | **11/11 (100%)** — expected runbook always among sources |
 | Empty-retrieval fallbacks | 0 (expected: every domain has runbooks) |
-| Avg end-to-end latency | ~10.5s/query (free-tier API round trips) |
+| Avg end-to-end latency | 10.46s/query (free-tier API round trips) |
 
 **Extensibility test** ([`eval/extensibility_test.md`](eval/extensibility_test.md)):
 a new **CI/CD** specialist domain (3 runbooks) was added in **under 10 minutes**

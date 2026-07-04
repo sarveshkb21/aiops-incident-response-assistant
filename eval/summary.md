@@ -1,16 +1,20 @@
 # Evaluation Summary
 
-- **Status:** PARTIAL — 2/20 queries (free-tier daily quota); run `python eval/run_eval.py --resume` after the quota resets to finish
-- **Run(s):** 2026-07-02 07:47:52 (UTC) — production path (route → specialist → domain-filtered retrieval → answer)
+- **Status:** PARTIAL — 11/20 queries (free-tier daily quota); run `python eval/run_eval.py --resume` after the quota resets to finish
+- **Note:** 7 record(s) reconstructed from the console log of an earlier run that crashed on a network error before saving (routing/hit/latency values exact as logged; per-stage latency split and source lists were not captured).
+- **Run(s):** 2026-07-02 07:47:52; 2026-07-04 14:16:00; 2026-07-04 14:23:52 (UTC) — production path (route → specialist → domain-filtered retrieval → answer)
 - **Model:** gemini-2.5-flash (routing + answering), Gemini free tier
-- **Routing accuracy:** 100.0% (2/2)
+- **Routing accuracy:** 100.0% (11/11)
 - **Retrieval hit rate:** 100.0% (expected runbook among retrieved sources)
-- **Empty-retrieval fallback rate:** 0.0% (0 of 2)
-- **Avg end-to-end latency:** 11.37s per query (free-tier API round trips; no local GPU)
+- **Empty-retrieval fallback rate:** 0.0% (0 of 11)
+- **Avg end-to-end latency:** 10.46s per query (free-tier API round trips; no local GPU)
 
 | Expected domain | n | Routing acc. | Retrieval hits | Avg route (s) | Avg answer (s) | Avg total (s) |
 |---|---|---|---|---|---|---|
 | kubernetes | 2 | 100.0% | 100.0% | 2.24 | 9.12 | 11.37 |
+| database | 3 | 100.0% | 100.0% | None | None | 11.3 |
+| infrastructure | 3 | 100.0% | 100.0% | None | None | 10.56 |
+| network | 3 | 100.0% | 100.0% | 2.42 | 6.66 | 8.93 |
 
 ## Misrouted queries
 

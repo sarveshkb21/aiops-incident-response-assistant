@@ -82,8 +82,8 @@ that drives the real production path — router → specialist → domain-filter
 retrieval → answer, including the fallback rule — over 20 labelled queries
 across all domains plus deliberately ambiguous cases. Interim results
 (**[UPDATE-WITH-FINAL-NUMBERS from eval/summary.md before submitting]**):
-**9/9 routing accuracy (100%)** and **9/9 retrieval hits (100%)** across the
-kubernetes, database, infrastructure, and network domains, ~10.5s average
+**11/11 routing accuracy (100%)** and **11/11 retrieval hits (100%)** across
+the kubernetes, database, infrastructure, and network domains, 10.46s average
 end-to-end latency on free-tier API round trips. The harness paces itself and
 resumes across days to respect the free tier's 20-requests/day cap — quota
 discipline as a first-class design constraint.

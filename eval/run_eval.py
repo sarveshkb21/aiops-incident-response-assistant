@@ -70,8 +70,17 @@ def _is_daily_quota(msg):
     return "PerDay" in msg or "per day" in msg.lower()
 
 
+def _is_transient_network(msg):
+    # e.g. httpx.ReadError / WinError 10054 mid-run, brief 5xx blips
+    needles = ("10054", "ReadError", "ConnectError", "ConnectionReset",
+               "Connection aborted", "RemoteProtocolError", "timed out",
+               "Timeout", "503", "ServiceUnavailable", "500 INTERNAL")
+    return any(n in msg for n in needles)
+
+
 def with_retry(fn, label):
-    """Run fn(); retry transient 429s like ingest.py, fail fast on daily quota."""
+    """Run fn(); retry transient 429s (like ingest.py) and network blips,
+    fail fast on the daily quota."""
     for attempt in range(len(RETRY_DELAYS) + 1):
         try:
             return fn()
@@ -79,9 +88,11 @@ def with_retry(fn, label):
             msg = str(e)
             if _is_rate_limit(msg) and _is_daily_quota(msg):
                 raise DailyQuotaExhausted(msg) from e
-            if _is_rate_limit(msg) and attempt < len(RETRY_DELAYS):
+            if (_is_rate_limit(msg) or _is_transient_network(msg)) \
+                    and attempt < len(RETRY_DELAYS):
                 wait = RETRY_DELAYS[attempt]
-                print(f"    rate-limited during {label}; retrying in {wait}s "
+                kind = "rate-limited" if _is_rate_limit(msg) else "network error"
+                print(f"    {kind} during {label}; retrying in {wait}s "
                       f"({attempt + 1}/{len(RETRY_DELAYS)})", flush=True)
                 time.sleep(wait)
                 continue
@@ -162,6 +173,10 @@ def summarise(records, total_planned):
     def pct(part, whole):
         return round(100.0 * part / whole, 1) if whole else 0.0
 
+    def avg(vals):
+        vals = [v for v in vals if v is not None]
+        return round(sum(vals) / len(vals), 2) if vals else None
+
     per_domain = {}
     for d in domains:
         rs = [r for r in records if r["expected_domain"] == d]
@@ -169,9 +184,9 @@ def summarise(records, total_planned):
             "n": len(rs),
             "routing_accuracy_pct": pct(sum(r["routing_correct"] for r in rs), len(rs)),
             "retrieval_hit_pct": pct(sum(r["retrieval_hit"] for r in rs), len(rs)),
-            "avg_route_latency_s": round(sum(r["route_latency_s"] for r in rs) / len(rs), 2),
-            "avg_answer_latency_s": round(sum(r["answer_latency_s"] for r in rs) / len(rs), 2),
-            "avg_total_latency_s": round(sum(r["total_latency_s"] for r in rs) / len(rs), 2),
+            "avg_route_latency_s": avg([r["route_latency_s"] for r in rs]),
+            "avg_answer_latency_s": avg([r["answer_latency_s"] for r in rs]),
+            "avg_total_latency_s": avg([r["total_latency_s"] for r in rs]),
         }
 
     n = len(records)
@@ -183,7 +198,7 @@ def summarise(records, total_planned):
         "retrieval_hit_pct": pct(sum(r["retrieval_hit"] for r in records), n),
         "fallback_count": sum(r["fell_back"] for r in records),
         "fallback_rate_pct": pct(sum(r["fell_back"] for r in records), n),
-        "avg_total_latency_s": round(sum(r["total_latency_s"] for r in records) / n, 2) if n else 0,
+        "avg_total_latency_s": avg([r["total_latency_s"] for r in records]) or 0,
         "per_domain": per_domain,
     }
 
@@ -195,10 +210,20 @@ def write_summary_md(summary, records, runs):
               else f"PARTIAL — {summary['n_queries_completed']}/{summary['n_queries_planned']} "
                    "queries (free-tier daily quota); run `python eval/run_eval.py --resume` "
                    "after the quota resets to finish")
+    recon = sum(1 for r in records if r.get("reconstructed_from_log"))
     lines = [
         "# Evaluation Summary",
         "",
         f"- **Status:** {status}",
+    ]
+    if recon:
+        lines.append(
+            f"- **Note:** {recon} record(s) reconstructed from the console log of an "
+            "earlier run that crashed on a network error before saving (routing/hit/"
+            "latency values exact as logged; per-stage latency split and source lists "
+            "were not captured)."
+        )
+    lines += [
         f"- **Run(s):** {'; '.join(runs)} (UTC) — production path "
         "(route → specialist → domain-filtered retrieval → answer)",
         f"- **Model:** {LLM_MODEL} (routing + answering), Gemini free tier",
@@ -317,6 +342,7 @@ def main():
                   flush=True)
             break
         records.append(record)
+        save(records, runs, args.delay, len(planned))  # persist after EVERY query
         status = "OK " if record["routing_correct"] else "MISROUTE"
         hit = "hit" if record["retrieval_hit"] else "MISS"
         fb = " +fallback" if record["fell_back"] else ""

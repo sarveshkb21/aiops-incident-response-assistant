@@ -1,22 +1,24 @@
 {
   "meta": {
     "runs": [
-      "2026-07-02 07:47:52"
+      "2026-07-02 07:47:52",
+      "2026-07-04 14:16:00",
+      "2026-07-04 14:23:52"
     ],
     "llm_model": "gemini-2.5-flash",
-    "n_queries_completed": 2,
+    "n_queries_completed": 11,
     "n_queries_planned": 20,
     "delay_between_queries_s": 15.0
   },
   "summary": {
-    "n_queries_completed": 2,
+    "n_queries_completed": 11,
     "n_queries_planned": 20,
     "complete": false,
     "routing_accuracy_pct": 100.0,
     "retrieval_hit_pct": 100.0,
     "fallback_count": 0,
     "fallback_rate_pct": 0.0,
-    "avg_total_latency_s": 11.37,
+    "avg_total_latency_s": 10.46,
     "per_domain": {
       "kubernetes": {
         "n": 2,
@@ -25,6 +27,30 @@
         "avg_route_latency_s": 2.24,
         "avg_answer_latency_s": 9.12,
         "avg_total_latency_s": 11.37
+      },
+      "database": {
+        "n": 3,
+        "routing_accuracy_pct": 100.0,
+        "retrieval_hit_pct": 100.0,
+        "avg_route_latency_s": null,
+        "avg_answer_latency_s": null,
+        "avg_total_latency_s": 11.3
+      },
+      "infrastructure": {
+        "n": 3,
+        "routing_accuracy_pct": 100.0,
+        "retrieval_hit_pct": 100.0,
+        "avg_route_latency_s": null,
+        "avg_answer_latency_s": null,
+        "avg_total_latency_s": 10.56
+      },
+      "network": {
+        "n": 3,
+        "routing_accuracy_pct": 100.0,
+        "retrieval_hit_pct": 100.0,
+        "avg_route_latency_s": 2.42,
+        "avg_answer_latency_s": 6.66,
+        "avg_total_latency_s": 8.93
       }
     }
   },
@@ -62,6 +88,152 @@
       "answer_latency_s": 9.33,
       "total_latency_s": 10.76,
       "answer_preview": "To find which specific container within a pod exceeded its memory limit and was OOMKilled, you should use `kubectl describe pod`.\n\nHere are the steps to identify the container and address the issue:\n\n### Identify the OOMKilled Container and Initial Analysis\n\n1.  **Identify the OOMKilled Container:**"
+    },
+    {
+      "id": "db-01",
+      "query": "Database connection pool exhausted - applications cannot get connections. What do I do?",
+      "expected_domain": "database",
+      "routed_domain": "database",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "database",
+      "sources": null,
+      "route_latency_s": null,
+      "answer_latency_s": null,
+      "total_latency_s": 13.21,
+      "answer_preview": null,
+      "reconstructed_from_log": true
+    },
+    {
+      "id": "db-02",
+      "query": "Replication lag keeps growing on our read replica and queries return stale data.",
+      "expected_domain": "database",
+      "routed_domain": "database",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "database",
+      "sources": null,
+      "route_latency_s": null,
+      "answer_latency_s": null,
+      "total_latency_s": 8.26,
+      "answer_preview": null,
+      "reconstructed_from_log": true
+    },
+    {
+      "id": "db-03",
+      "query": "Deadlocks are spiking on the orders table in production SQL.",
+      "expected_domain": "database",
+      "routed_domain": "database",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "database",
+      "sources": null,
+      "route_latency_s": null,
+      "answer_latency_s": null,
+      "total_latency_s": 12.43,
+      "answer_preview": null,
+      "reconstructed_from_log": true
+    },
+    {
+      "id": "infra-01",
+      "query": "High CPU alert on a Linux server, load average is 40 - remediation steps?",
+      "expected_domain": "infrastructure",
+      "routed_domain": "infrastructure",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "infrastructure",
+      "sources": null,
+      "route_latency_s": null,
+      "answer_latency_s": null,
+      "total_latency_s": 11.23,
+      "answer_preview": null,
+      "reconstructed_from_log": true
+    },
+    {
+      "id": "infra-02",
+      "query": "Disk space at 95% on the application server and climbing.",
+      "expected_domain": "infrastructure",
+      "routed_domain": "infrastructure",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "infrastructure",
+      "sources": null,
+      "route_latency_s": null,
+      "answer_latency_s": null,
+      "total_latency_s": 10.04,
+      "answer_preview": null,
+      "reconstructed_from_log": true
+    },
+    {
+      "id": "infra-03",
+      "query": "The service health check keeps failing intermittently on our API host.",
+      "expected_domain": "infrastructure",
+      "routed_domain": "infrastructure",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "infrastructure",
+      "sources": null,
+      "route_latency_s": null,
+      "answer_latency_s": null,
+      "total_latency_s": 10.4,
+      "answer_preview": null,
+      "reconstructed_from_log": true
+    },
+    {
+      "id": "net-01",
+      "query": "DNS resolution is failing intermittently across several services - how to debug?",
+      "expected_domain": "network",
+      "routed_domain": "network",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "network",
+      "sources": null,
+      "route_latency_s": null,
+      "answer_latency_s": null,
+      "total_latency_s": 8.62,
+      "answer_preview": null,
+      "reconstructed_from_log": true
+    },
+    {
+      "id": "net-02",
+      "query": "Users report very high latency to the API and ping times have spiked.",
+      "expected_domain": "network",
+      "routed_domain": "network",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "network",
+      "sources": [
+        "runbook_high_latency.txt"
+      ],
+      "route_latency_s": 3.27,
+      "answer_latency_s": 6.65,
+      "total_latency_s": 9.92,
+      "answer_preview": "It sounds like you're dealing with a high network latency issue, which can significantly impact API performance. Based on the \"High Network Latency / Packet Loss\" runbook, here are the steps to take:\n\n**Immediate Steps to Address High Network Latency:**\n\n1.  **Measure Latency and Loss:** From an aff"
+    },
+    {
+      "id": "net-03",
+      "query": "The load balancer is showing packet loss to its backend targets.",
+      "expected_domain": "network",
+      "routed_domain": "network",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "network",
+      "sources": [
+        "runbook_high_latency.txt"
+      ],
+      "route_latency_s": 1.57,
+      "answer_latency_s": 6.67,
+      "total_latency_s": 8.24,
+      "answer_preview": "It sounds like you're experiencing packet loss from the load balancer to its backend targets, which aligns with our \"High Network Latency / Packet Loss\" runbook. Let's follow these steps to diagnose and mitigate the issue:\n\n### Immediate Steps to Address Load Balancer Packet Loss:\n\n1.  **Measure Lat"
     }
   ]
 }
