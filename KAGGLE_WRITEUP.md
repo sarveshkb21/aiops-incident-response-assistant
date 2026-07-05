@@ -80,13 +80,14 @@ Two properties make this trustworthy enough for an incident context:
 The repo ships a reproducible evaluation harness (`python eval/run_eval.py`)
 that drives the real production path — router → specialist → domain-filtered
 retrieval → answer, including the fallback rule — over 20 labelled queries
-across all domains plus deliberately ambiguous cases. Interim results
-(**[UPDATE-WITH-FINAL-NUMBERS from eval/summary.md before submitting]**):
-**11/11 routing accuracy (100%)** and **11/11 retrieval hits (100%)** across
-the kubernetes, database, infrastructure, and network domains, 10.46s average
-end-to-end latency on free-tier API round trips. The harness paces itself and
-resumes across days to respect the free tier's 20-requests/day cap — quota
-discipline as a first-class design constraint.
+across all domains plus deliberately ambiguous cases. Full-run results:
+**20/20 routing accuracy (100%)** — including all three deliberately
+ambiguous queries correctly classified `general` — and **20/20 retrieval hits
+(100%)**, with 10.81s average end-to-end latency on free-tier API round trips
+(per-query records in `eval/results.json`). It is a smoke-scale evaluation by
+design; the point is that the claim is reproducible with one command. The
+harness paces itself and resumes across days to respect the free tier's
+20-requests/day cap — quota discipline as a first-class design constraint.
 
 **Extensibility was tested, not asserted:** adding a brand-new CI/CD specialist
 (3 runbooks) took under 10 minutes and changed only data plus two registry

@@ -3,22 +3,24 @@
     "runs": [
       "2026-07-02 07:47:52",
       "2026-07-04 14:16:00",
-      "2026-07-04 14:23:52"
+      "2026-07-04 14:23:52",
+      "2026-07-04 14:27:42",
+      "2026-07-05 13:12:26"
     ],
     "llm_model": "gemini-2.5-flash",
-    "n_queries_completed": 11,
+    "n_queries_completed": 20,
     "n_queries_planned": 20,
     "delay_between_queries_s": 15.0
   },
   "summary": {
-    "n_queries_completed": 11,
+    "n_queries_completed": 20,
     "n_queries_planned": 20,
-    "complete": false,
+    "complete": true,
     "routing_accuracy_pct": 100.0,
     "retrieval_hit_pct": 100.0,
     "fallback_count": 0,
     "fallback_rate_pct": 0.0,
-    "avg_total_latency_s": 10.46,
+    "avg_total_latency_s": 10.81,
     "per_domain": {
       "kubernetes": {
         "n": 2,
@@ -51,6 +53,30 @@
         "avg_route_latency_s": 2.42,
         "avg_answer_latency_s": 6.66,
         "avg_total_latency_s": 8.93
+      },
+      "security": {
+        "n": 3,
+        "routing_accuracy_pct": 100.0,
+        "retrieval_hit_pct": 100.0,
+        "avg_route_latency_s": 2.46,
+        "avg_answer_latency_s": 10.36,
+        "avg_total_latency_s": 12.82
+      },
+      "cicd": {
+        "n": 3,
+        "routing_accuracy_pct": 100.0,
+        "retrieval_hit_pct": 100.0,
+        "avg_route_latency_s": 2.54,
+        "avg_answer_latency_s": 6.79,
+        "avg_total_latency_s": 9.33
+      },
+      "general": {
+        "n": 3,
+        "routing_accuracy_pct": 100.0,
+        "retrieval_hit_pct": 100.0,
+        "avg_route_latency_s": 2.11,
+        "avg_answer_latency_s": 9.46,
+        "avg_total_latency_s": 11.57
       }
     }
   },
@@ -234,6 +260,162 @@
       "answer_latency_s": 6.67,
       "total_latency_s": 8.24,
       "answer_preview": "It sounds like you're experiencing packet loss from the load balancer to its backend targets, which aligns with our \"High Network Latency / Packet Loss\" runbook. Let's follow these steps to diagnose and mitigate the issue:\n\n### Immediate Steps to Address Load Balancer Packet Loss:\n\n1.  **Measure Lat"
+    },
+    {
+      "id": "sec-01",
+      "query": "Suspicious login from an unknown IP address on a production server - what now?",
+      "expected_domain": "security",
+      "routed_domain": "security",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "security",
+      "sources": [
+        "runbook_unauthorized_access.txt"
+      ],
+      "route_latency_s": 3.33,
+      "answer_latency_s": 11.84,
+      "total_latency_s": 15.18,
+      "answer_preview": "This is a critical P1 incident related to Unauthorized Access / Suspicious Login. We need to act quickly to contain the potential intrusion.\n\nHere are the immediate steps to take:\n\n1.  **Prioritize Containment, but Do Not Tip Off the Actor:** While your primary goal is to contain any active damage, "
+    },
+    {
+      "id": "sec-02",
+      "query": "Our TLS certificate expires tomorrow. What is the renewal procedure?",
+      "expected_domain": "security",
+      "routed_domain": "security",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "security",
+      "sources": [
+        "runbook_ssl_cert_expiry.txt"
+      ],
+      "route_latency_s": 1.53,
+      "answer_latency_s": 8.61,
+      "total_latency_s": 10.14,
+      "answer_preview": "It sounds like you're dealing with an urgent situation as your TLS certificate expires tomorrow. We need to act quickly to prevent an outage. Here's the step-by-step procedure to renew your TLS certificate based on our runbook:\n\n### TLS Certificate Renewal Procedure (Expiring Tomorrow)\n\n1.  **Confir"
+    },
+    {
+      "id": "sec-03",
+      "query": "We are seeing brute-force SSH attempts against a bastion host.",
+      "expected_domain": "security",
+      "routed_domain": "security",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "security",
+      "sources": [
+        "runbook_unauthorized_access.txt"
+      ],
+      "route_latency_s": 2.52,
+      "answer_latency_s": 10.63,
+      "total_latency_s": 13.15,
+      "answer_preview": "This is a P1 Critical security incident related to Unauthorized Access / Suspicious Login, as brute-force SSH attempts indicate a potential active intrusion. Immediate containment and investigation are required.\n\nHere are the steps to take:\n\n1.  **Contain the Threat (Block Malicious IPs):**\n    *   "
+    },
+    {
+      "id": "cicd-01",
+      "query": "GitHub Actions pipeline has been stuck in queued for two hours and is blocking a hotfix.",
+      "expected_domain": "cicd",
+      "routed_domain": "cicd",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "cicd",
+      "sources": [
+        "runbook_pipeline_stuck.txt"
+      ],
+      "route_latency_s": 2.63,
+      "answer_latency_s": 12.01,
+      "total_latency_s": 14.64,
+      "answer_preview": "Okay, I understand. A GitHub Actions pipeline is stuck in \"queued\" for two hours and is blocking a hotfix, which elevates this to a P2 severity incident. Let's work through this systematically.\n\nHere are the immediate steps to investigate and resolve the issue:\n\n1.  **Check GitHub Actions Status Pag"
+    },
+    {
+      "id": "cicd-02",
+      "query": "Our release pipeline shipped a bad build to production - how do I roll back the release?",
+      "expected_domain": "cicd",
+      "routed_domain": "cicd",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "cicd",
+      "sources": [
+        "runbook_failed_deployment.txt"
+      ],
+      "route_latency_s": 1.32,
+      "answer_latency_s": 3.31,
+      "total_latency_s": 4.63,
+      "answer_preview": "It sounds like you're dealing with a bad production release. Let's get this rolled back quickly.\n\nHere are the steps to roll back the release:\n\n1.  **Initiate Rollback:** The immediate remediation for a bad release is to roll back to the last known good version.\n2.  **Verify Rollback:** Monitor your"
+    },
+    {
+      "id": "cicd-03",
+      "query": "docker push to the artifact registry fails with 401 unauthorized in CI.",
+      "expected_domain": "cicd",
+      "routed_domain": "cicd",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "cicd",
+      "sources": [
+        "runbook_artifact_registry.txt"
+      ],
+      "route_latency_s": 3.68,
+      "answer_latency_s": 5.04,
+      "total_latency_s": 8.72,
+      "answer_preview": "Okay, I understand. A `docker push` to the artifact registry failing with \"401 unauthorized\" in CI indicates a credential or permission issue. This is covered by our \"Artifact Registry Push/Pull Failures\" runbook.\n\nHere are the immediate steps to resolve this:\n\n1.  **Re-authenticate to the registry:"
+    },
+    {
+      "id": "gen-01",
+      "query": "Our office printer says PC LOAD LETTER, what now?",
+      "expected_domain": "general",
+      "routed_domain": "general",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "general",
+      "sources": [
+        "runbook_artifact_registry.txt",
+        "runbook_disk_space.txt",
+        "runbook_unauthorized_access.txt"
+      ],
+      "route_latency_s": 2.73,
+      "answer_latency_s": 9.88,
+      "total_latency_s": 12.61,
+      "answer_preview": "I don't have a specific runbook for this, as the provided context focuses on software registry and infrastructure issues. However, here is general guidance for the \"PC LOAD LETTER\" error on a printer:\n\n1.  **Identify the Printer Model**: Note down the make and model of the printer. This can be helpf"
+    },
+    {
+      "id": "gen-02",
+      "query": "What is the general process for handling a SEV-1 incident end to end?",
+      "expected_domain": "general",
+      "routed_domain": "general",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "general",
+      "sources": [
+        "runbook_failed_deployment.txt"
+      ],
+      "route_latency_s": 1.6,
+      "answer_latency_s": 10.1,
+      "total_latency_s": 11.7,
+      "answer_preview": "I don't have a specific runbook for the *entire* end-to-end SEV-1 incident process, but here is general guidance based on IT best practices, incorporating immediate remediation steps from your runbooks where relevant:\n\nA SEV-1 incident requires rapid response and clear communication to minimize impa"
+    },
+    {
+      "id": "gen-03",
+      "query": "Something is wrong in prod, users are complaining, but I do not know where to start.",
+      "expected_domain": "general",
+      "routed_domain": "general",
+      "routing_correct": true,
+      "retrieval_hit": true,
+      "fell_back": false,
+      "answering_domain": "general",
+      "sources": [
+        "runbook_failed_deployment.txt",
+        "runbook_service_health.txt"
+      ],
+      "route_latency_s": 2.0,
+      "answer_latency_s": 8.41,
+      "total_latency_s": 10.41,
+      "answer_preview": "It sounds like you're dealing with a critical production issue impacting users. Let's follow the \"Failed Production Deployment / Bad Release\" runbook to stabilize the situation quickly. The priority is to restore service, then investigate.\n\nHere are the steps to take:\n\n### Immediate Action: Assess R"
     }
   ]
 }

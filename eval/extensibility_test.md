@@ -61,10 +61,11 @@ stuck pipeline: 3 chunks, domains=['cicd'], sources=['runbook_pipeline_stuck.txt
  registry auth: 3 chunks, domains=['cicd'], sources=['runbook_artifact_registry.txt']
 ```
 
-**Routing** is exercised by the three CI/CD queries (`cicd-01`..`cicd-03`) in
-the evaluation set (`eval/test_queries.py`); their results are reported in
-`eval/summary.md` / `eval/results.json` alongside the original domains as the
-quota-paced evaluation run completes.
+**Routing + answering** were verified by the three CI/CD queries
+(`cicd-01`..`cicd-03`) in the completed evaluation run (see `eval/summary.md`):
+**3/3 routed to the `cicd` specialist, 3/3 retrieval hits** (each query
+surfaced its intended runbook), 9.3s average end-to-end latency — on par with
+the six original domains.
 
 ## Why this works by construction
 

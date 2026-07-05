@@ -216,16 +216,30 @@ ambiguous/off-domain cases. It measures:
 - **Fallback rate** — how often the empty-retrieval safety net fired.
 - **Latency** — per stage (route / answer) and per domain.
 
-Interim results (run in progress — the harness paces itself across days to
-respect the Gemini free tier's 20-requests/day cap and resumes with
-`--resume`; final numbers live in [`eval/summary.md`](eval/summary.md)):
+Results (full run, 2026-07-04/05; per-query records in
+[`eval/results.json`](eval/results.json), details in
+[`eval/summary.md`](eval/summary.md)):
 
-| Metric | Result (11 of 20 queries so far) |
+| Metric | Result (20/20 queries) |
 |---|---|
-| Routing accuracy | **11/11 (100%)** — kubernetes, database, infrastructure, network fully covered |
-| Retrieval hit rate | **11/11 (100%)** — expected runbook always among sources |
+| Routing accuracy | **20/20 (100%)** across all 7 domains, incl. 3/3 ambiguous → `general` |
+| Retrieval hit rate | **20/20 (100%)** — expected runbook always among sources |
 | Empty-retrieval fallbacks | 0 (expected: every domain has runbooks) |
-| Avg end-to-end latency | 10.46s/query (free-tier API round trips) |
+| Avg end-to-end latency | 10.81s/query (free-tier API round trips) |
+
+| Domain | n | Routing | Hits | Avg latency (s) |
+|---|---|---|---|---|
+| kubernetes | 2 | 100% | 100% | 11.4 |
+| database | 3 | 100% | 100% | 11.3 |
+| infrastructure | 3 | 100% | 100% | 10.6 |
+| network | 3 | 100% | 100% | 8.9 |
+| security | 3 | 100% | 100% | 12.8 |
+| cicd | 3 | 100% | 100% | 9.3 |
+| general (ambiguous) | 3 | 100% | 100% | 11.6 |
+
+The harness itself is quota-aware engineering: it paces requests for the free
+tier's 20-requests/day cap, retries transient 429s and network errors, saves
+after every query, and resumes across days with `--resume`.
 
 **Extensibility test** ([`eval/extensibility_test.md`](eval/extensibility_test.md)):
 a new **CI/CD** specialist domain (3 runbooks) was added in **under 10 minutes**
