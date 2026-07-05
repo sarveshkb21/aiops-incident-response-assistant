@@ -4,7 +4,22 @@ Three annotated screenshots that evidence the writeup's claims. Save them in
 this folder with the exact filenames below, then embed them in the Kaggle
 writeup (the writeup editor supports image upload) and/or the repo README.
 
-## Setup
+## Automated capture (recommended)
+
+`capture.py` does all of this unattended — starts the app headlessly, runs
+the three queries, screenshots each full conversation (annotations placed
+from the live DOM), and records a `.webm` screen demo to `docs/video/`
+(YouTube accepts `.webm` directly; add a voiceover using VIDEO_SCRIPT.md).
+
+```powershell
+.\venv\Scripts\python.exe -m pip install playwright
+.\venv\Scripts\python.exe -m playwright install chromium
+.\venv\Scripts\python.exe docs\screenshots\capture.py        # 3 queries = 6 Gemini calls
+```
+
+Mind the free tier: a full run costs 6 of the 20 daily requests.
+
+## Manual capture — Setup
 
 ```powershell
 .\venv\Scripts\activate

@@ -24,3 +24,7 @@ Thumbs.db
 
 # Local AI-assistant config (machine-specific paths)
 .claude/
+
+# Demo capture intermediates (final annotated shots ARE committed)
+docs/screenshots/raw/
+docs/video/
