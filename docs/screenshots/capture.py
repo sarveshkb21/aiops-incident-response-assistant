@@ -52,7 +52,8 @@ SPECS = {
         "file": "02_general_agent_honesty.png",
         "query": "Our office printer says PC LOAD LETTER, what now?",
         "marks": [("trace", "No specialist fits — General agent handles it"),
-                  ("honesty", "Admits the gap instead of inventing a source")],
+                  # label below, or it would cover the badge line above it
+                  ("honesty", "Admits the gap instead of inventing a source", "below")],
     },
     3: {
         "file": "03_new_domain_cicd.png",
@@ -118,7 +119,9 @@ def annotate(src, dst, marks, crop_bottom=None):
         im = im.crop((0, 0, im.width, crop_bottom))
     d = ImageDraw.Draw(im)
     font = ImageFont.truetype(r"C:\Windows\Fonts\segoeuib.ttf", 17)
-    for bb, label in marks:
+    for mark in marks:
+        bb, label = mark[0], mark[1]
+        pos = mark[2] if len(mark) > 2 else "above"
         if not bb:
             print(f"    (annotation target not found for: {label})")
             continue
@@ -128,7 +131,10 @@ def annotate(src, dst, marks, crop_bottom=None):
         tw = d.textlength(label, font=font)
         th = 26
         lx = min(max(x0, 8), im.width - tw - 20)
-        ly = y0 - th - 10 if y0 - th - 10 > 4 else min(y1 + 10, im.height - th - 6)
+        if pos == "below":
+            ly = min(y1 + 10, im.height - th - 6)
+        else:
+            ly = y0 - th - 10 if y0 - th - 10 > 4 else min(y1 + 10, im.height - th - 6)
         d.rounded_rectangle([lx - 8, ly - 4, lx + tw + 8, ly + th - 4],
                             radius=6, fill=(239, 68, 68))
         d.text((lx, ly - 2), label, font=font, fill=(255, 255, 255))
@@ -139,7 +145,7 @@ def capture_tall(page, spec):
     """Resize to the tall viewport, measure, screenshot, crop, annotate."""
     page.set_viewport_size(TALL)
     time.sleep(2.5)  # relayout
-    marks = [(find_box(page, kind), label) for kind, label in spec["marks"]]
+    marks = [(find_box(page, m[0]),) + tuple(m[1:]) for m in spec["marks"]]
     # Crop just below the last message — the chat input is pinned to the
     # bottom of the (tall) viewport, so anchoring on it would keep a void.
     crop = None
